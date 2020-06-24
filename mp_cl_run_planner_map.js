@@ -27,17 +27,20 @@ var next_day;
 
 var zee_array = [];
 var zee_text_array = [];
-var day_array = [];
+//var day_array = [];
+var day;
+var before_time;
+var after_time;
 var run_array = [];
 var op_array = [];
-var before_time_array = [];
-var after_time_array = [];
+//var before_time_array = [];
+//var after_time_array = [];
 var optimize_array = [];
 var optimize = false;
 
 var search_markers_array = [];
 var run_markers_array = [];
-var color_array = ['blue', 'red', 'green'];
+var color_array = ['blue', 'red', 'green', 'orange', 'cyan'];
 
 
 var baseURL = 'https://1048144.app.netsuite.com';
@@ -71,12 +74,11 @@ function clientPageInit(type) {
     $('#loader').remove();
     $('.uir-outside-fields-table').css('width', '-webkit-fill-available');
 
-    AddStyle('https://1048144.app.netsuite.com/core/media/media.nl?id=1988776&c=1048144&h=58352d0b4544df20b40f&_xt=.css', 'head');
-/*    $('.zee_dropdown').selectator({
-        keepOpen: true,
-        showAllOptionsOnFocus: true,
-        selectFirstOptionOnSearch: false
-    });*/
+    /*    $('.zee_dropdown').selectator({
+            keepOpen: true,
+            showAllOptionsOnFocus: true,
+            selectFirstOptionOnSearch: false
+        });*/
 
     // var zeeRecord = nlapiLoadRecord('partner', 228329);
     // var stop_freq_json = zeeRecord.getFieldValue('custentity_zee_run', stop_freq_json);
@@ -95,17 +97,29 @@ function clientPageInit(type) {
                 lng: 133.583
             }
         });
+        //var src = 'https://1048144-sb3.app.netsuite.com/core/media/media.nl?id=1318405&c=1048144_SB3&h=f00a0e9da674eb0036b9&_xt=.txt';
+        var src = 'https://1048144.app.netsuite.com/core/media/media.nl?id=1318405&c=1048144&h=c8ae3e4d351aca0ce8d9&_xt=.txt';
+        //var src = 'https://developers.google.com/maps/documentation/javascript/examples/kml/westcampus.kml'
+        var kmlLayer = new google.maps.KmlLayer(src, {
+            //url: 'https://1048144-sb3.app.netsuite.com/core/media/media.nl?id=1318405&c=1048144_SB3&h=f00a0e9da674eb0036b9&mv=kbn80l5c&_xt=.txt', 
+            suppressInfoWindows: true,
+            preserveViewport: false,
+            map: map
+        });
+        console.log('kmlLayer', kmlLayer);
 
         op_array = nlapiGetFieldValue('op').split(',');
         run_array = nlapiGetFieldValue('run').split(',');
         optimize_array = nlapiGetFieldValue('optimisation').split(',');
-        day_array = nlapiGetFieldValue('day').split(',');
-        beforetime_array = nlapiGetFieldValue('beforetime').split(',');
-        aftertime_array = nlapiGetFieldValue('aftertime').split(',');
+        day = parseInt(nlapiGetFieldValue('day'));
+        before_time = nlapiGetFieldValue('beforetime');
+        after_time = nlapiGetFieldValue('aftertime');
         console.log('op_array', op_array);
         console.log('run_array', run_array);
         console.log('optimize_array', optimize_array);
-        console.log('day_array', day_array);
+        console.log('day', day);
+        console.log('before_time', before_time);
+        console.log('after_time', after_time);
         for (i = 0; i < zee_array.length; i++) {
             var zee = zee_array[i];
             console.log('i', i);
@@ -127,13 +141,9 @@ function clientPageInit(type) {
             if (run == 'no_run') {
                 $('#op_not_assigned_' + zee + '').removeClass("hide");
             } else { //only load the map if a run exists for that operator
-                console.log('day_array', day_array);
-                console.log('day_array.length', day_array.length);
-                console.log('i', i);
-                console.log('day_array[i]', day_array[i]);
-                day = day_array[i];
-                before_time = beforetime_array[i];
-                after_time = aftertime_array[i];
+                /*                day = day_array[i];
+                                before_time = beforetime_array[i];
+                                after_time = aftertime_array[i];*/
                 console.log('day', day);
                 console.log('day of week ' + days_of_week[day]);
                 console.log('before_time', before_time);
@@ -234,10 +244,6 @@ function clientPageInit(type) {
                     // directionsDisplay.setMap(map);
 
                     directionsDisplay.setPanel(document.getElementById('directionsPanel'));
-                    var legend = document.getElementById('legend');
-                    map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(legend);
-                    $('#legend').removeClass('hide');
-
                     calculateAndDisplayRoute(directionsDisplay, directionsService, waypoint_json, markerArray, stepDisplay, map, waypoint_otherproperties, zee);
                     addMarker(map, stepDisplay, waypoint_otherproperties, zee);
                     //customizeDirectionsPanel(directionsDisplay);
@@ -255,6 +261,10 @@ function clientPageInit(type) {
                 }
             }
         }
+
+        var legend = document.getElementById('legend');
+        map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(legend);
+        $('#legend').removeClass('hide');
 
         if (zee_array.length > 1) { //HIDE THE RUN MARKERS BY DEFAULT IF MULTIPLE ZEES
             for (i = 0; i < run_markers_array.length; i++) {
@@ -443,7 +453,8 @@ function calculateAndDisplayRoute(directionsDisplay, directionsService, waypoint
         //             directionsDisplay.setDirections(combinedResults);
         //     }
         // });
-        (function(kk) {
+        var delayFactor = 0;
+        (function m_get_directions_route(kk) {
             directionsService.route(request, function(result, status) {
                 if (status == window.google.maps.DirectionsStatus.OK) {
 
@@ -488,6 +499,14 @@ function calculateAndDisplayRoute(directionsDisplay, directionsService, waypoint
                         console.log('getTravellingTime', getTravellingTime(combinedResults));
                         //showSteps(combinedResults, markerArray, stepDisplay, map, parsedWayPointProperties);
                     }
+                } else if (status == window.google.maps.DirectionsStatus.OVER_QUERY_LIMIT) {
+                    console.log('OVER_QUERY_LIMIT');
+                    delayFactor++;
+                    setTimeout(function() {
+                        m_get_directions_route(kk);
+                    }, delayFactor * 1000);
+                } else {
+                    console.log("Route: " + status);
                 }
             });
         })(i);
@@ -575,8 +594,8 @@ function customizeDirectionsPanel(directionsDisplay) {
     directionsDisplay.getPanel().style.visibility = 'visible';
 }, 100);*/
 
-$(document).on('focusout', '.zee_dropdown', function(event) {
-    var zee = $(this).val();
+$(document).on('click', '#applyZee', function(event) {
+    var zee = $('.zee_dropdown').val();
 
     var url = baseURL + "/app/site/hosting/scriptlet.nl?script=887&deploy=1";
 
@@ -611,13 +630,13 @@ $(document).on('change', '.op_dropdown', function(event) {
 
 function filterRunDropdown(zee, op) {
     var run_empty = true; //to know if a run exists for this operator
-    console.log('op', op);
+    //console.log('op', op);
     var run_dropdown = $('#run_dropdown_' + zee + '');
     for (k = 0; k < run_dropdown[0].length; k++) {
         var option = run_dropdown[0][k];
-        console.log('option.value', option.value);
+        //console.log('option.value', option.value);
         var run_op = $('#' + option.value + '').attr('data-op');
-        console.log('run_op', run_op);
+        //console.log('run_op', run_op);
         if (op == 0) { //ALL operators, all the runs can be selected
             $('#' + option.value + '').removeAttr('disabled');
         } else if (!isNullorEmpty(run_op) && run_op == op) { //the run is assigned to this operator
@@ -644,38 +663,38 @@ function filterRunDropdown(zee, op) {
 }
 
 $(document).on('click', '#apply', function(event) {
-    var day_array = [];
+    var day = $('option:selected', '#day_dropdown').val();
+    var before_time_2 = $('#before_time').val();
+    var after_time_2 = $('#after_time').val();
     var run_array = [];
     var op_array = [];
-    var before_time_array = [];
-    var after_time_array = [];
     var optimize_array = [];
 
     $('.tab-pane').each(function(e) {
         console.log($(this));
         var id = $(this)[0].id;
-        day_array[day_array.length] = $('option:selected', '#day_dropdown_' + id + '').val();
+        //day[day_array.length] = $('option:selected', '#day_dropdown_' + id + '').val();
         run_array[run_array.length] = $('option:selected', '#run_dropdown_' + id + '').val();
         op_array[op_array.length] = $('option:selected', '#op_dropdown_' + id + '').val();
-        before_time_array[before_time_array.length] = $('#before_time_' + id + '').val();
-        after_time_array[after_time_array.length] = $('#after_time_' + id + '').val();
+        //before_time_array[before_time_array.length] = $('#before_time_' + id + '').val();
+        //after_time_array[after_time_array.length] = $('#after_time_' + id + '').val();
         optimize_array[optimize_array.length] = $('#optimize_' + id + '').prop('checked');
     })
-    console.log('day_array', day_array);
+    console.log('day', day);
     console.log('run_array', run_array);
     console.log('op_array', op_array);
-    console.log('before_time_array', before_time_array);
-    console.log('after_time_array', after_time_array);
+    console.log('before_time_2', before_time_2);
+    console.log('after_time_2', after_time_2);
     console.log('optimize_array', optimize_array);
 
     var url = baseURL + "/app/site/hosting/scriptlet.nl?script=887&deploy=1";
 
     url += "&zee=" + zee_array + "";
-    url += "&day=" + day_array + "";
+    url += "&day=" + day + "";
     url += "&op=" + op_array + "";
     url += "&run=" + run_array + "";
-    url += "&before=" + before_time_array + "";
-    url += "&after=" + after_time_array + "";
+    url += "&before=" + before_time_2 + "";
+    url += "&after=" + after_time_2 + "";
     url += "&optimize=" + optimize_array + "";
 
     window.location.href = url;
@@ -1608,10 +1627,10 @@ function convertTo24Hour(time) {
 }
 
 function AddStyle(cssLink, pos) {
-  var tag = document.getElementsByTagName(pos)[0];
-  var addLink = document.createElement('link');
-  addLink.setAttribute('type', 'text/css');
-  addLink.setAttribute('rel', 'stylesheet');
-  addLink.setAttribute('href', cssLink);
-  tag.appendChild(addLink);
+    var tag = document.getElementsByTagName(pos)[0];
+    var addLink = document.createElement('link');
+    addLink.setAttribute('type', 'text/css');
+    addLink.setAttribute('rel', 'stylesheet');
+    addLink.setAttribute('href', cssLink);
+    tag.appendChild(addLink);
 }
