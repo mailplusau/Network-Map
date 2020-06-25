@@ -25,15 +25,22 @@ var partner_location;
 var same_day;
 var next_day;
 
-var zee;
+var zee_array = [];
+var zee_text_array = [];
+//var day_array = [];
 var day;
-var run;
-var op;
 var before_time;
 var after_time;
-var optimize;
+var run_array = [];
+var op_array = [];
+//var before_time_array = [];
+//var after_time_array = [];
+var optimize_array = [];
+var optimize = false;
 
-var markers_array = [];
+var search_markers_array = [];
+var run_markers_array = [];
+var color_array = ['blue', 'red', 'green', 'orange', 'black'];
 
 
 var baseURL = 'https://1048144.app.netsuite.com';
@@ -66,172 +73,183 @@ $('.collapse').on('hide.bs.collapse', function() {
 function clientPageInit(type) {
     $('#loader').remove();
     $('.uir-outside-fields-table').css('width', '-webkit-fill-available');
+    $('.zee_dropdown').selectpicker();
 
-    // var zeeRecord = nlapiLoadRecord('partner', 228329);
-    // var stop_freq_json = zeeRecord.getFieldValue('custentity_zee_run', stop_freq_json);
-
-    zee = nlapiGetFieldValue('zee');
-    if (zee != 0) {
-        optimize = nlapiGetFieldValue('optimisation');
-        console.log('optimize', optimize);
-        if (optimize == 'true'){
-            optimize = true;
-        } else if (optimize == 'false'){
-            optimize = false;
+    //LOAD MAP & TERRITORIES
+    map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 4,
+        center: {
+            lat: -27.833,
+            lng: 133.583
         }
-        console.log('optimize', optimize);
-        op = parseInt(nlapiGetFieldValue('op'));
-        run = parseInt(nlapiGetFieldValue('run'));
-        if (run == 0) {
-            run = filterRunDropdown(op);
-        }
-        console.log('run', run);
-        if (run == 'no_run') {
-            $('.op_not_assigned').removeClass("hide");
-        } else { //only load the map if a run exists for that operator
-            $('.run_dropdown')
-            var serviceLegSearch = nlapiLoadSearch('customrecord_service_leg', 'customsearch_rp_leg_freq_all_2');
+    });
+    var legend = document.getElementById('legend');
+    map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(legend);
+    map.data.loadGeoJson(
+        'https://1048144.app.netsuite.com/core/media/media.nl?id=3772482&c=1048144&h=4579935b386159057056&_xt=.js');
+    map.data.addListener('mouseover', function(event) {
+        $('#zee_territory').val(event.feature.getProperty('Territory'));
+        console.log('event.feature.getProperty(territory)', event.feature.getProperty('Territory'));
+    });
+    map.data.addListener('mouseout', function(event) {
+        $('#zee_territory').val('');
+    })
 
-            day = parseInt(nlapiGetFieldValue('day'));
-            before_time = nlapiGetFieldValue('beforetime');
-            after_time = nlapiGetFieldValue('aftertime');
-            console.log('day', day);
-            console.log('day of week ' + days_of_week[day]);
-            console.log('before_time', before_time);
-            console.log('after_time', after_time);
-
-            var run_array = getRunJSON(zee, run, day, before_time, after_time);
-            //console.log('run_array', run_array);
-            var parsedStopFreq = run_array[0];
-            //var stops = run_array[0];
-            var firststop_time = run_array[1];
-            var laststop_time = run_array[2];
-
-            var stops_number = parsedStopFreq.data.length;
-            $('#firststop').val(firststop_time);
-            $('#laststop').val(laststop_time);
-            console.log('stops_number', stops_number);
-
-            var stops_number_temp = 0;
-            var waypoint_json = [];
-            var waypoint_otherproperties = [];
-            var origin = [];
-            var destination = [];
-
-            var markerArray = [];
-
-
-            if (stops_number != 0) {
-                //if (stops_number > 25) {
-                var y_length = Math.ceil(stops_number / 25);
-                console.log(y_length)
-                var each_request_length = parseInt(Math.ceil((stops_number + (y_length - 1)) / y_length));
-                console.log('each_request_length', each_request_length);
-                for (var y = 0; y < y_length; y++) {
-                    // stops_number_temp = stops_number - 25;
-                    // origin[y] = parsedStopFreq.data[parseInt(y_length * y)].address;
-                    // destination[y] = parsedStopFreq.data[parseInt(each_request_length * (y + 1)) - 1].address;
-                    waypoint_json[y] = '[';
-                    waypoint_otherproperties[y] = '[';
-                    for (var x = (parseInt(each_request_length * y)); x < (parseInt(each_request_length * (y + 1))); x++) {
-                        if (!isNullorEmpty(parsedStopFreq.data[x - y] && !isNullorEmpty(parsedStopFreq.data[x - y].address))) {
-                            waypoint_json[y] += '{"location": "' + parsedStopFreq.data[x - y].address + '",'; //x - y so that the first element of an array is the last element of the previous array
-                            if (isNullorEmpty(parsedStopFreq.data[x - y].ncl)) {
-                                waypoint_otherproperties[y] += '{"name": "' + parsedStopFreq.data[x - y].services[0].customer_text + '",';
-                                waypoint_otherproperties[y] += '"location_type": "customer",';
-                            } else {
-                                waypoint_otherproperties[y] += '{"name": "' + parsedStopFreq.data[x - y].title + '",';
-                                waypoint_otherproperties[y] += '"location_type": "ncl",';
-                            }
-                            waypoint_otherproperties[y] += '"time": "' + parsedStopFreq.data[x - y].start + '",';
-                            waypoint_otherproperties[y] += '"lat": "' + parsedStopFreq.data[x - y].lat + '",';
-
-                            /*                    if (x == (parseInt(each_request_length * (y + 1)) - 1)) {
-                                                    waypoint_json[y] += '"stopover": ' + true + '}';
-                                                    waypoint_otherproperties[y] += '"lng": "' + parsedStopFreq.data[x - y].lon + '"}';
-                                                } else {
-                                                    waypoint_json[y] += '"stopover": ' + true + '},';
-                                                    waypoint_otherproperties[y] += '"lng": "' + parsedStopFreq.data[x - y].lon + '"},';
-                                                }*/
-                            waypoint_json[y] += '"stopover": ' + true + '},';
-                            waypoint_otherproperties[y] += '"lng": "' + parsedStopFreq.data[x - y].lon + '"},';
-                        }
-                    }
-                    waypoint_json[y] = waypoint_json[y].substring(0, waypoint_json[y].length - 1);
-                    waypoint_otherproperties[y] = waypoint_otherproperties[y].substring(0, waypoint_otherproperties[y].length - 1);
-                    waypoint_json[y] += ']';
-                    waypoint_otherproperties[y] += ']';
-
-                }
-                //}
-
-
-                // for (var x = 0; x < parsedStopFreq.data.length; x++) {
-                //     if (!isNullorEmpty(parsedStopFreq.data[x].address)) {
-
-                //         waypoint_json += '{"location": "' + parsedStopFreq.data[x].address + '",';
-                //         if (x == (parsedStopFreq.data.length - 1)) {
-                //             waypoint_json += '"stopover": ' + true + '}';
-                //         } else {
-                //             waypoint_json += '"stopover": ' + true + '},';
-                //         }
-                //     }
-
-                // }
-
-                // waypoint_json += ']';
-
-                console.log(waypoint_json);
-                console.log(waypoint_otherproperties);
-
-                // var parsedWayPoint = JSON.parse(waypoint_json);
-
-                var directionsService = new google.maps.DirectionsService();
-                map = new google.maps.Map(document.getElementById('map'), {
-                    zoom: 4,
-                    center: {
-                        lat: -27.833,
-                        lng: 133.583
-                    }
-                });
-                var directionsDisplay = new google.maps.DirectionsRenderer({
-                    map: map,
-                    suppressMarkers: true,
-                    //suppressInfoWindows: true, 
-
-                });
-
-                var stepDisplay = new google.maps.InfoWindow();
-
-                // var map = new google.maps.Map(document.getElementById('map'), mapOptions);
-                // directionsDisplay.setMap(map);
-
-                directionsDisplay.setPanel(document.getElementById('directionsPanel'));
-                var legend = document.getElementById('legend');
-                map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(legend);
-                $('#legend').removeClass('hide');
-
-                calculateAndDisplayRoute(directionsDisplay, directionsService, waypoint_json, markerArray, stepDisplay, map, waypoint_otherproperties);
-                addMarker(map, stepDisplay, waypoint_otherproperties);
-                customizeDirectionsPanel(directionsDisplay);
-
-                $('.row_address').removeClass('hide');
-                $('.row_time').removeClass('hide');
-                $('.print_section').removeClass('hide');
-                $('.map_section').removeClass('hide');
-            } else {
-                $('.run_not_scheduled').removeClass('hide');
-                $('.map_section').addClass('hide');
-                $('.row_address').addClass('hide');
-                $('.print_section').addClass('hide');
-            }
-        }
+    var zee_string = nlapiGetFieldValue('zee');
+    //console.log('zee_string', zee_string);
+    if (!isNullorEmpty(zee_string)) {
+        zee_array = zee_string.split(',');
+        zee_text_array = nlapiGetFieldValue('zee_text').split(',');
     }
+
+    if (zee_array.length != 0) {
+        op_array = nlapiGetFieldValue('op').split(',');
+        run_array = nlapiGetFieldValue('run').split(',');
+        optimize_array = nlapiGetFieldValue('optimisation').split(',');
+        day = parseInt(nlapiGetFieldValue('day'));
+        before_time = nlapiGetFieldValue('beforetime');
+        after_time = nlapiGetFieldValue('aftertime');
+        console.log('zee_array', zee_array);
+        console.log('op_array', op_array);
+        console.log('run_array', run_array);
+        console.log('optimize_array', optimize_array);
+        console.log('day', day);
+        console.log('before_time', before_time);
+        console.log('after_time', after_time);
+        for (i = 0; i < zee_array.length; i++) {
+            var zee = zee_array[i];
+            //console.log('i', i);
+            var run = run_array[i];
+            var op = op_array[i];
+            optimize = optimize_array[i];
+            //console.log('run', run);
+            //console.log('op', op);
+            //console.log('optimize', optimize);
+            if (optimize == 'true') {
+                optimize = true;
+            } else if (optimize == 'false') {
+                optimize = false;
+            }
+
+            if (run == 0) {
+                run = filterRunDropdown(zee, op);
+            }
+            if (run == 'no_run') {
+                $('#op_not_assigned_' + zee + '').removeClass("hide");
+            } else { //only load the map if a run exists for that operator
+                /*                day = day_array[i];
+                                before_time = beforetime_array[i];
+                                after_time = aftertime_array[i];*/
+                //console.log('day', day);
+                //console.log('day of week ' + days_of_week[day]);
+                //console.log('before_time', before_time);
+                //console.log('after_time', after_time);
+
+                var runJSON_array = getRunJSON(zee, run, day, before_time, after_time);
+                //console.log('runJSON_array', runJSON_array);
+                var parsedStopFreq = runJSON_array[0];
+                var firststop_time = runJSON_array[1];
+                var laststop_time = runJSON_array[2];
+
+                var stops_number = parsedStopFreq.data.length;
+                $('#firststop_' + zee + '').val(firststop_time);
+                $('#laststop_' + zee + '').val(laststop_time);
+                console.log('stops_number', stops_number);
+
+                var stops_number_temp = 0;
+                var waypoint_json = [];
+                var waypoint_otherproperties = [];
+                var origin = [];
+                var destination = [];
+
+                var markerArray = [];
+
+
+                if (stops_number != 0) {
+                    var y_length = Math.ceil(stops_number / 25);
+                    console.log(y_length)
+                    var each_request_length = parseInt(Math.ceil((stops_number + (y_length - 1)) / y_length));
+                    console.log('each_request_length', each_request_length);
+                    for (var y = 0; y < y_length; y++) {
+                        // stops_number_temp = stops_number - 25;
+                        // origin[y] = parsedStopFreq.data[parseInt(y_length * y)].address;
+                        // destination[y] = parsedStopFreq.data[parseInt(each_request_length * (y + 1)) - 1].address;
+                        waypoint_json[y] = '[';
+                        waypoint_otherproperties[y] = '[';
+                        for (var x = (parseInt(each_request_length * y)); x < (parseInt(each_request_length * (y + 1))); x++) {
+                            if (!isNullorEmpty(parsedStopFreq.data[x - y] && !isNullorEmpty(parsedStopFreq.data[x - y].address))) {
+                                waypoint_json[y] += '{"location": "' + parsedStopFreq.data[x - y].address + '",'; //x - y so that the first element of an array is the last element of the previous array
+                                if (isNullorEmpty(parsedStopFreq.data[x - y].ncl)) {
+                                    waypoint_otherproperties[y] += '{"name": "' + parsedStopFreq.data[x - y].services[0].customer_text + '",';
+                                    waypoint_otherproperties[y] += '"location_type": "customer",';
+                                } else {
+                                    waypoint_otherproperties[y] += '{"name": "' + parsedStopFreq.data[x - y].title + '",';
+                                    waypoint_otherproperties[y] += '"location_type": "ncl",';
+                                }
+                                waypoint_otherproperties[y] += '"time": "' + parsedStopFreq.data[x - y].start + '",';
+                                waypoint_otherproperties[y] += '"lat": "' + parsedStopFreq.data[x - y].lat + '",';
+                                waypoint_json[y] += '"stopover": ' + true + '},';
+                                waypoint_otherproperties[y] += '"lng": "' + parsedStopFreq.data[x - y].lon + '"},';
+                            }
+                        }
+                        waypoint_json[y] = waypoint_json[y].substring(0, waypoint_json[y].length - 1);
+                        waypoint_otherproperties[y] = waypoint_otherproperties[y].substring(0, waypoint_otherproperties[y].length - 1);
+                        waypoint_json[y] += ']';
+                        waypoint_otherproperties[y] += ']';
+
+                    }
+
+                    console.log(waypoint_json);
+                    console.log(waypoint_otherproperties);
+
+                    var directionsService = new google.maps.DirectionsService();
+                    var directionsDisplay = new google.maps.DirectionsRenderer({
+                        map: map,
+                        suppressMarkers: true,
+                        //suppressInfoWindows: true, 
+                        polylineOptions: {
+                            strokeColor: color_array[i],
+                        },
+
+                    });
+
+                    var stepDisplay = new google.maps.InfoWindow();
+
+                    // var map = new google.maps.Map(document.getElementById('map'), mapOptions);
+                    // directionsDisplay.setMap(map);
+
+                    directionsDisplay.setPanel(document.getElementById('directionsPanel'));
+                    calculateAndDisplayRoute(directionsDisplay, directionsService, waypoint_json, markerArray, stepDisplay, map, waypoint_otherproperties, zee);
+                    addMarker(map, stepDisplay, waypoint_otherproperties, zee);
+                    //customizeDirectionsPanel(directionsDisplay);
+
+                    $('.row_time').removeClass('hide');
+                    $('.print_section').removeClass('hide');
+                } else {
+                    $('#run_not_scheduled_' + zee + '').removeClass('hide');
+                    $('.print_section').addClass('hide');
+                }
+            }
+            $('#runMarkers').removeClass('hide');
+        }
+
+        if (zee_array.length > 1) { //HIDE THE RUN MARKERS BY DEFAULT IF MULTIPLE ZEES
+            for (i = 0; i < run_markers_array.length; i++) {
+                var marker = run_markers_array[i];
+                marker.setMap(null);
+            }
+            $('#runMarkers').val('SHOW RUN MARKERS');
+            $('#runMarkers').toggleClass('btn-success');
+            $('#runMarkers').toggleClass('btn-danger');
+        }
+        $('.legend_icons').removeClass('hide');
+    }
+    $('.map_section').removeClass('hide');
 
 }
 
 
-function addMarker(map, stepDisplay, waypoint_otherproperties) {
+function addMarker(map, stepDisplay, waypoint_otherproperties, zee) {
     var marker_count = 0;
     //for markers at the exact same location - OverlappingMarkerSpiderfier to spiderfy the markers on click
     var oms = new OverlappingMarkerSpiderfier(map, {
@@ -269,7 +287,7 @@ function addMarker(map, stepDisplay, waypoint_otherproperties) {
             //console.log('letter', letter);
 
             //Customer location or NCL
-            // Marker SVG Path: https://material.io/tools/icons/?icon=place&style=baseline
+            // Marker SVG Path: 
             var MAP_MARKER = 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z';
             if (parsedWayPointProperties[x].location_type == 'ncl') {
                 color = '#575756'
@@ -317,11 +335,12 @@ function addMarker(map, stepDisplay, waypoint_otherproperties) {
 
             });
             oms.addMarker(marker); //add the marker to the OverlappingMarkerSpiderfier instance
+            run_markers_array[run_markers_array.length] = marker; //store the markers created to be able to delete them
 
             //Marker InfoWindow
             var name = parsedWayPointProperties[x].name;
             var time = parsedWayPointProperties[x].time;
-            var content = '<b>' + name + '</b><br/> Service Time: ' + onTimeChange(time) + '';
+            var content = '<b>' + name + '</b><br/> Franchisee: ' + zee_text_array[zee_array.indexOf(zee)] + '<br/> Service Time: ' + onTimeChange(time) + '';
             attachInstructionText(
                 stepDisplay, marker, content, map);
             marker_count++;
@@ -331,7 +350,7 @@ function addMarker(map, stepDisplay, waypoint_otherproperties) {
 }
 
 
-function calculateAndDisplayRoute(directionsDisplay, directionsService, waypoint_json, markerArray, stepDisplay, map, waypoint_otherproperties) {
+function calculateAndDisplayRoute(directionsDisplay, directionsService, waypoint_json, markerArray, stepDisplay, map, waypoint_otherproperties, zee) {
     for (var i = 0; i < markerArray.length; i++) {
         markerArray[i].setMap(null);
     }
@@ -403,7 +422,8 @@ function calculateAndDisplayRoute(directionsDisplay, directionsService, waypoint
         //             directionsDisplay.setDirections(combinedResults);
         //     }
         // });
-        (function(kk) {
+        var delayFactor = 0;
+        (function m_get_directions_route(kk) {
             directionsService.route(request, function(result, status) {
                 if (status == window.google.maps.DirectionsStatus.OK) {
 
@@ -444,10 +464,18 @@ function calculateAndDisplayRoute(directionsDisplay, directionsService, waypoint
                         directionsDisplay.setDirections(combinedResults);
                         console.log('combinedResults', combinedResults);
                         getTravellingTime(combinedResults);
-                        $('#travelling_time').val(getTravellingTime(combinedResults));
+                        $('#travelling_time_' + zee + '').val(getTravellingTime(combinedResults));
                         console.log('getTravellingTime', getTravellingTime(combinedResults));
                         //showSteps(combinedResults, markerArray, stepDisplay, map, parsedWayPointProperties);
                     }
+                } else if (status == window.google.maps.DirectionsStatus.OVER_QUERY_LIMIT) {
+                    console.log('OVER_QUERY_LIMIT');
+                    delayFactor++;
+                    setTimeout(function() {
+                        m_get_directions_route(kk);
+                    }, delayFactor * 1000);
+                } else {
+                    console.log("Route: " + status);
                 }
             });
         })(i);
@@ -462,7 +490,7 @@ function getTravellingTime(directionResult) {
         //console.log('directionResult.routes[0].legs[i].duration.value', directionResult.routes[0].legs[i].duration.value);
         travellingTime_sec += directionResult.routes[0].legs[i].duration.value;
     }
-    console.log('travellingTime_sec', travellingTime_sec);
+    //console.log('travellingTime_sec', travellingTime_sec);
     travellingTime_array = convertSecondsToHours(travellingTime_sec);
     if (!isNullorEmpty(travellingTime_array[0])) {
         travellingTime += '' + travellingTime_array[0] + 'h';
@@ -535,8 +563,8 @@ function customizeDirectionsPanel(directionsDisplay) {
     directionsDisplay.getPanel().style.visibility = 'visible';
 }, 100);*/
 
-$(document).on('focusout', '.zee_dropdown', function(event) {
-    var zee = $(this).val();
+$(document).on('click', '#applyZee', function(event) {
+    var zee = $('.zee_dropdown').selectpicker('val');
 
     var url = baseURL + "/app/site/hosting/scriptlet.nl?script=887&deploy=1";
 
@@ -544,38 +572,23 @@ $(document).on('focusout', '.zee_dropdown', function(event) {
 
     window.location.href = url;
 });
-
-/*$(document).on('change', '.day_dropdown', function(event) {
-    var day = $(this).val();
-    var run = nlapiGetFieldValue('run');
-    var op = nlapiGetFieldValue('op');
-    var time_window = nlapiGetFieldValue('time_window');
-
-    var url = baseURL + "/app/site/hosting/scriptlet.nl?script=887&deploy=1";
-
-    url += "&zee=" + zee + "";
-    url += "&day=" + day + "";
-    url += "&op=" + op + "";
-    url += "&run=" + run + "";
-    url += "&time_window=" + time_window + "";
-
-    window.location.href = url;
-});*/
 
 $(document).on('change', '.op_dropdown', function(event) {
     var op = $(this).val();
-    filterRunDropdown(op);
+    var zee = $(this).attr('data-zeeid');
+    console.log('zee', zee);
+    filterRunDropdown(zee, op);
 });
 
-function filterRunDropdown(op) {
+function filterRunDropdown(zee, op) {
     var run_empty = true; //to know if a run exists for this operator
-    console.log('op', op);
-    var run_dropdown = document.getElementsByClassName("run_dropdown");
-    for (i = 0; i < run_dropdown[0].length; i++) {
-        var option = run_dropdown[0][i];
-        console.log('option.value', option.value);
+    //console.log('op', op);
+    var run_dropdown = $('#run_dropdown_' + zee + '');
+    for (k = 0; k < run_dropdown[0].length; k++) {
+        var option = run_dropdown[0][k];
+        //console.log('option.value', option.value);
         var run_op = $('#' + option.value + '').attr('data-op');
-        console.log('run_op', run_op);
+        //console.log('run_op', run_op);
         if (op == 0) { //ALL operators, all the runs can be selected
             $('#' + option.value + '').removeAttr('disabled');
         } else if (!isNullorEmpty(run_op) && run_op == op) { //the run is assigned to this operator
@@ -589,68 +602,78 @@ function filterRunDropdown(op) {
     if (run_empty == true && op != 0) {
         $('#no_run').removeAttr('disabled');
         $('#0').attr('disabled', 'disabled');
-        $('.run_dropdown').val('no_run');
+        $('#run_dropdown_' + zee + '').val('no_run');
+        /*run_dropdown.find('#no_run').removeAttr('disabled');
+        run_dropdown.find('#0').attr('disabled', 'disabled');
+        run_dropdown.find('#run_dropdown_' + zee + '').val('no_run');*/
     } else if (run_empty == false || op == 0) {
         $('#0').removeAttr('disabled');
         $('#no_run').attr('disabled', 'disabled');
-        $('.run_dropdown').val(0);
+        $('#run_dropdown_' + zee + '').val(0);
     }
-    return $('option:selected', '.run_dropdown').val()
+    return $('option:selected', '#run_dropdown_' + zee + '').val()
 }
 
-/*$(document).on('change', '.run_dropdown', function(event) {
-    var run = $(this).val();
-    var day = nlapiGetFieldValue('day');
-    var time_window = nlapiGetFieldValue('time_window');
+$(document).on('click', '#apply', function(event) {
+    var day = $('option:selected', '#day_dropdown').val();
+    var before_time_2 = $('#before_time').val();
+    var after_time_2 = $('#after_time').val();
+    var run_array = [];
+    var op_array = [];
+    var optimize_array = [];
+
+    $('.tab-pane').each(function(e) {
+        console.log($(this));
+        var id = $(this)[0].id;
+        //day[day_array.length] = $('option:selected', '#day_dropdown_' + id + '').val();
+        run_array[run_array.length] = $('option:selected', '#run_dropdown_' + id + '').val();
+        op_array[op_array.length] = $('option:selected', '#op_dropdown_' + id + '').val();
+        //before_time_array[before_time_array.length] = $('#before_time_' + id + '').val();
+        //after_time_array[after_time_array.length] = $('#after_time_' + id + '').val();
+        optimize_array[optimize_array.length] = $('#optimize_' + id + '').prop('checked');
+    })
+    console.log('day', day);
+    console.log('run_array', run_array);
+    console.log('op_array', op_array);
+    console.log('before_time_2', before_time_2);
+    console.log('after_time_2', after_time_2);
+    console.log('optimize_array', optimize_array);
 
     var url = baseURL + "/app/site/hosting/scriptlet.nl?script=887&deploy=1";
 
-    url += "&zee=" + zee + "";
+    url += "&zee=" + zee_array + "";
     url += "&day=" + day + "";
-    url += "&run=" + run + "";
-    url += "&time_window=" + time_window + "";
+    url += "&op=" + op_array + "";
+    url += "&run=" + run_array + "";
+    url += "&before=" + before_time_2 + "";
+    url += "&after=" + after_time_2 + "";
+    url += "&optimize=" + optimize_array + "";
 
     window.location.href = url;
 });
 
-$(document).on('change', '.before_time', function(event) {
-    var before_time = $(this).val();
-    var op = nlapiGetFieldValue('op');
-    var run = nlapiGetFieldValue('run');
-    var day = nlapiGetFieldValue('day');
+$(".nav-tabs").on("click", "li a", function(e) {
+    var this_zee = $(this).attr('href');
+    $(".tabs").each(function() {
+        $(this).find(".nav-tabs li").each(function(index, element) {
+            var zee_id = $(this).children('a').attr('href');
+            console.log('zee_id: ' + zee_id);
+            $(this).children('a').css({
+                "background-color": "white",
+                "color": "#337ab7"
+            });
+            if ($(this).attr('class') == 'active') {
 
-    var url = baseURL + "/app/site/hosting/scriptlet.nl?script=887&deploy=1";
+            } else if (this_zee == zee_id) {
+                $(this).children('a').tab('show');
+            }
+        });
 
-    url += "&zee=" + zee + "";
-    url += "&day=" + day + "";
-    url += "&op=" + op + "";
-    url += "&run=" + run + "";
-    url += "&time_window=" + time_window + "";
-
-    window.location.href = url;
-});*/
-
-$(document).on('click', '#apply', function(event) {
-    var day = $('option:selected', '.day_dropdown').val();
-    var run = $('option:selected', '.run_dropdown').val();
-    var op = $('option:selected', '.op_dropdown').val();
-    var before_time = $('#before_time').val();
-    var after_time = $('#after_time').val();
-    var optimize = $('#optimize').is(':checked');
-
-    var url = baseURL + "/app/site/hosting/scriptlet.nl?script=887&deploy=1";
-
-    url += "&zee=" + zee + "";
-    url += "&day=" + day + "";
-    url += "&op=" + op + "";
-    if (run != 'no_run') {
-        url += "&run=" + run + "";
-    }
-    url += "&before=" + before_time + "";
-    url += "&after=" + after_time + "";
-    url += "&optimize=" + optimize + "";
-
-    window.location.href = url;
+    });
+    $(this).css({
+        "background-color": "rgb(50, 122, 183)",
+        "color": "white"
+    });
 });
 
 /*$(document).on('click', '.run_summary', function(e) {
@@ -728,26 +751,63 @@ $(document).on('click', '#viewOnMap', function(event) {
         title: 'My New Marker',
         //label: 'NEW',
     });
-    markers_array[markers_array.length] = new_marker; //save the markers created to be able to delete them
+    search_markers_array[search_markers_array.length] = new_marker; //store the markers created to be able to delete them
 });
 
 $(document).on('click', '#clearMarkers', function(event) {
-    for (i = 0; i < markers_array.length; i++){
-        var marker = markers_array[i];
+    for (i = 0; i < search_markers_array.length; i++) {
+        var marker = search_markers_array[i];
         marker.setMap(null);
     }
-    markers_array = [];
+    search_markers_array = [];
+});
+
+$(document).on('click', '#runMarkers', function(event) {
+    console.log($(this).val());
+    if ($(this).val() == 'HIDE RUN MARKERS') {
+        for (i = 0; i < run_markers_array.length; i++) {
+            var marker = run_markers_array[i];
+            marker.setMap(null);
+        }
+        $('#runMarkers').val('SHOW RUN MARKERS');
+    } else if ($(this).val() == 'SHOW RUN MARKERS') {
+        for (i = 0; i < run_markers_array.length; i++) {
+            var marker = run_markers_array[i];
+            marker.setMap(map);
+        }
+        $('#runMarkers').val('HIDE RUN MARKERS');
+    }
+    $('#runMarkers').toggleClass('btn-success');
+    $('#runMarkers').toggleClass('btn-danger');
+});
+
+$(document).on('click', '#territoryMap', function(event) {
+    console.log($(this).val());
+    if ($(this).val() == 'HIDE TERRITORY MAP') {
+        map.data.setStyle({visible: false});
+        $('#territoryMap').val('SHOW TERRITORY MAP');
+    } else if ($(this).val() == 'SHOW TERRITORY MAP') {
+        map.data.setStyle({visible: true});
+        $('#territoryMap').val('HIDE TERRITORY MAP');
+    }
+    $('#territoryMap').toggleClass('btn-success');
+    $('#territoryMap').toggleClass('btn-danger');
 });
 
 $(document).on('click', '#printDirections', function(event) {
-    var zee_text = nlapiGetFieldValue('zee_text');
+    var zee_text_array = nlapiGetFieldValue('zee_text');
+    var zee_text = zee_text_array.split(',')[0];
     var day_text = nlapiGetFieldValue('day_text');
     var before_time = nlapiGetFieldValue('beforetime');
     var after_time = nlapiGetFieldValue('aftertime');
 
-    if (!isNullorEmpty(run) && run != 0) { //one run
-        var run_text = nlapiGetFieldValue('run_text');
-        var op_text = nlapiGetFieldValue('op_text');
+    var run_text_array = nlapiGetFieldValue('run_text');
+    var run_text = run_text_array.split(',')[0];
+    console.log('run_text', run_text);
+
+    if (!isNullorEmpty(run_text)) { //one run
+        var op_text_array = nlapiGetFieldValue('op_text');
+        var op_text = op_text_array.split(',')[0];
         var title = '' + zee_text + ' - ' + run_text + ' (' + op_text + ') - ' + day_text + '';
     } else { //the all run
         var title = '' + zee_text + ' - ALL - ' + day_text + '';
@@ -776,6 +836,11 @@ function directionsPanelOverflow() {
 }
 
 function getRunJSON(zee, run, day, before_time, after_time) {
+    //console.log('zee', zee);
+    //console.log('run', run);
+    //console.log('day', day);
+    //console.log('before_time', before_time);
+    //console.log('after_time', after_time);
     var serviceLegSearch = nlapiLoadSearch('customrecord_service_leg', 'customsearch_rp_leg_freq_all_2');
 
     var newFilters = new Array();
@@ -1358,66 +1423,13 @@ function getRunJSON(zee, run, day, before_time, after_time) {
 
     stop_freq_json += ']}';
 
-    console.log(stop_freq_json);
+    //console.log(stop_freq_json);
     var parsedStopFreq = JSON.parse(stop_freq_json);
-    console.log(parsedStopFreq);
+    //console.log(parsedStopFreq);
 
     return [parsedStopFreq, firststop_time, laststop_time];
 }
 
-/*function saveRecord() {
-
-    var code_elem = document.getElementsByClassName("state_code");
-    var same_day_elem = document.getElementsByClassName("same_day_rate");
-    var next_day_elem = document.getElementsByClassName("next_day_rate");
-    var code = [];
-    var same_day_array = [];
-    var next_day_array = [];
-
-    for (var i = 0; i < code_elem.length; ++i) {
-        code[i] = code_elem[i].value;
-        same_day_array[i] = same_day_elem[i].value;
-        next_day_array[i] = next_day_elem[i].value;
-    }
-
-    var total_array = code.toString();
-
-    var strs = [];
-    var text_field_length = 300
-
-    // while (total_array.length >= text_field_length) {
-    //  var pos = (total_array.substring(0, text_field_length).lastIndexOf(','));
-    //  pos = pos <= text_field_length ? (text_field_length + 1) : pos;
-    //  strs.push(total_array.substring(0, pos));
-    //  var i = total_array.indexOf(',', pos) + 1;
-    //  if (i < pos || i > pos + text_field_length) {
-    //      i = pos;
-    //  }
-    //  total_array = total_array.substring(i);
-    // }
-    // strs.push(total_array);
-
-    // console.log(strs);
-
-
-    console.log(total_array)
-    console.log(same_day_array)
-    console.log(next_day_array)
-
-
-    nlapiSetFieldValue('code_array', total_array);
-    nlapiSetFieldValue('same_day_array', same_day_array.toString());
-    nlapiSetFieldValue('next_day_array', next_day_array.toString());
-    // if (!isNullorEmpty(strs[1])) {
-    //  nlapiSetFieldValue('code_array2', strs[1]);
-    // }
-    // if (!isNullorEmpty(strs[2])) {
-    //  nlapiSetFieldValue('code_array3', strs[2]);
-    // }
-
-    return true;
-
-}*/
 
 function convertSecondsToHours(secs) {
     var hours = Math.floor(secs / (60 * 60));
