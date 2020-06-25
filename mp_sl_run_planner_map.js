@@ -18,12 +18,14 @@ var day;
 var before_time;
 var after_time;
 var run_array = [];
+var run_text_array = [];
 var op_array = [];
+var op_text_array = [];
 //var before_time_array = [];
 //var after_time_array = [];
 var optimize_array = [];
 
-var color_array = ['blue', 'red', 'green', 'orange', 'cyan'];
+var color_array = ['blue', 'red', 'green', 'orange', 'black'];
 
 
 function stateNames(state) {
@@ -130,7 +132,9 @@ function summary_page(request, response) {
 
         var form = nlapiCreateForm('Your Franchise Service Network');
 
-        var inlineQty = '<meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"><script src="//code.jquery.com/jquery-1.11.0.min.js"></script><script src="//api.tiles.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.min.js"></script><link type="text/css" rel="stylesheet" href="https://cdn.datatables.net/1.10.13/css/jquery.dataTables.min.css"><link href="//netdna.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css" rel="stylesheet"><link href="https://1048144.app.netsuite.com/core/media/media.nl?id=1988776&c=1048144&h=58352d0b4544df20b40f&mv=j11m86u8&_xt=.css" rel="stylesheet"><script src="//netdna.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script><script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA92XGDo8rx11izPYT7z2L-YPMMJ6Ih1s0&callback=initMap&libraries=places"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/OverlappingMarkerSpiderfier/1.0.3/oms.min.js"></script></script><link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css" /><script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script><style>.info {padding: 6px 8px;font: 14px/16px Arial, Helvetica, sans-serif;background: white;background: rgba(255,255,255,0.8);box-shadow: 0 0 15px rgba(0,0,0,0.2);border-radius: 5px;}.info h5 { margin: 0 0 5px;color: #777;}.table {border-radius: 5px;width: 50%;margin: 0px auto;float: none;} #loader {position: absolute;top: 0;bottom: 0;width: 100%;background-color: rgba(245, 245, 245, 0.7);z-index: 200; }#loader img {width: 66px;height: 66px;position: absolute;top: 50%;left: 50%;margin: -33px 0 0 -33px;}</style>';
+        var inlineQty = '<meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"><script src="//code.jquery.com/jquery-1.11.0.min.js"></script><script src="//api.tiles.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.min.js"></script><link type="text/css" rel="stylesheet" href="https://cdn.datatables.net/1.10.13/css/jquery.dataTables.min.css"><link href="//netdna.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css" rel="stylesheet"><link href="https://1048144.app.netsuite.com/core/media/media.nl?id=1988776&c=1048144&h=58352d0b4544df20b40f&mv=j11m86u8&_xt=.css" rel="stylesheet"><script src="//netdna.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script><script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA92XGDo8rx11izPYT7z2L-YPMMJ6Ih1s0&callback=initMap&libraries=places"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/OverlappingMarkerSpiderfier/1.0.3/oms.min.js"></script></script><link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css" /><script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>';
+        inlineQty += '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/css/bootstrap-select.min.css"><script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/js/bootstrap-select.min.js"></script>';
+        inlineQty += '<style>.info {padding: 6px 8px;font: 14px/16px Arial, Helvetica, sans-serif;background: white;background: rgba(255,255,255,0.8);box-shadow: 0 0 15px rgba(0,0,0,0.2);border-radius: 5px;}.info h5 { margin: 0 0 5px;color: #777;}.table {border-radius: 5px;width: 50%;margin: 0px auto;float: none;} #loader {position: absolute;top: 0;bottom: 0;width: 100%;background-color: rgba(245, 245, 245, 0.7);z-index: 200; }#loader img {width: 66px;height: 66px;position: absolute;top: 50%;left: 50%;margin: -33px 0 0 -33px;}</style>';
 
         inlineQty += '<div id="myModal" class="modal fade bs-example-modal-sm" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true"><div class="modal-dialog modal-sm" role="document" style="width :max-content"><div class="modal-content" style="width :max-content; max-width: 900px"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button><h4 class="modal-title panel panel-info" id="exampleModalLabel">Run Summary</h4><br> </div><div class="modal-body"></div><div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal">Close</button></div></div></div></div>';
 
@@ -141,7 +145,7 @@ function summary_page(request, response) {
         inlineQty += '<div class="container" id="main_container" style="padding-top: 3%;"><div class="container row_parameters">';
         //SELECT FRANCHISEE
         if (role != 1000) {
-            inlineQty += '<div class="form-group row"><div class="col-sm-3"><div class="input-group" style="height: 200px;"><span class="input-group-addon">SELECT ZEE</span><select class="form-control zee_dropdown" style="height: 200px;" multiple>';
+            inlineQty += '<div class="form-group row"><div class="col-sm-10"><div class="input-group"><span class="input-group-addon">SELECT ZEE</span><select class="form-control zee_dropdown selectpicker" multiple data-actions-box="true">';
 
             var searched_zee = nlapiLoadSearch('partner', 'customsearch_job_inv_process_zee');
             var resultSet_zee = searched_zee.runSearch();
@@ -165,7 +169,7 @@ function summary_page(request, response) {
             });
 
             inlineQty += '</select></div></div>';
-            inlineQty += '<div class="col-sm-2"><input type="button" class="btn btn-primary" id="applyZee" value="APPLY ZEE" style="width: 100%; margin-top:50%;"/></div>';
+            inlineQty += '<div class="col-sm-2"><input type="button" class="btn btn-primary" id="applyZee" value="APPLY ZEE" style="width: 100%;"/></div>';
 
             inlineQty += '</div>';
             //zee = request.getParameter('zee');
@@ -185,7 +189,7 @@ function summary_page(request, response) {
             for (i = 1; i < 6; i++) { //from Monday to Friday
                 if (i == day) {
                     inlineQty += '<option value="' + i + '" selected="selected">' + day_name[i] + '</option>';
-                    //var day_text = day_name[i];
+                    var day_text = day_name[i];
                 } else {
                     inlineQty += '<option value="' + i + '">' + day_name[i] + '</option>';
                 }
@@ -273,8 +277,7 @@ function summary_page(request, response) {
                     var operator_name = operatorResult.getValue("name", null, "GROUP");
                     if (op_array[k] == operator_id) {
                         tab_content += '<option value="' + operator_id + '" selected="selected">' + operator_name + '</option>';
-                        //var op_text = operator_name;
-                        //form.addField('op_text', 'text', 'zee').setDisplayType('hidden').setDefaultValue(op_text);
+                        op_text_array[op_text_array.length] = operator_name;
                     } else {
                         tab_content += '<option value="' + operator_id + '">' + operator_name + '</option>';
                     }
@@ -301,8 +304,7 @@ function summary_page(request, response) {
                     run_op = searchResult_runPlan.getValue('custrecord_run_operator');
                     if (run_array[k] == runinternalid) {
                         tab_content += '<option id="' + runinternalid + '" value="' + runinternalid + '" selected="selected" data-op="' + run_op + '">' + runname + '</option>';
-                        var run_text = runname;
-                        //form.addField('run_text', 'text', 'zee').setDisplayType('hidden').setDefaultValue(run_text);
+                        run_text_array[run_text_array.length] = runname;
                     } else {
                         tab_content += '<option id="' + runinternalid + '" value="' + runinternalid + '" data-op="' + run_op + '">' + runname + '</option>';
                     }
@@ -418,12 +420,14 @@ function summary_page(request, response) {
         inlineQty += '</div>'; //close main container
 
         form.addField('zee', 'text', 'zee').setDisplayType('hidden').setDefaultValue(zee_array.join(','));
-        form.addField('zee_text', 'text', 'zee').setDisplayType('hidden').setDefaultValue(zee_text_array);
+        form.addField('zee_text', 'text', 'zee').setDisplayType('hidden').setDefaultValue(zee_text_array.join(','));
         //form.addField('day', 'text', 'zee').setDisplayType('hidden').setDefaultValue(day_array.join(','));
         form.addField('day', 'text', 'zee').setDisplayType('hidden').setDefaultValue(day);
-        //form.addField('day_text', 'text', 'zee').setDisplayType('hidden').setDefaultValue(day_text);
+        form.addField('day_text', 'text', 'zee').setDisplayType('hidden').setDefaultValue(day_text);
         form.addField('op', 'text', 'zee').setDisplayType('hidden').setDefaultValue(op_array.join(','));
+        form.addField('op_text', 'text', 'zee').setDisplayType('hidden').setDefaultValue(op_text_array.join(','));
         form.addField('run', 'text', 'zee').setDisplayType('hidden').setDefaultValue(run_array.join(','));
+        form.addField('run_text', 'text', 'zee').setDisplayType('hidden').setDefaultValue(run_text_array.join(','));
         //form.addField('beforetime', 'text', 'zee').setDisplayType('hidden').setDefaultValue(before_time_array.join(','));
         //form.addField('aftertime', 'text', 'zee').setDisplayType('hidden').setDefaultValue(after_time_array.join(','));
         form.addField('beforetime', 'text', 'zee').setDisplayType('hidden').setDefaultValue(before_time);

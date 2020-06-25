@@ -40,7 +40,7 @@ var optimize = false;
 
 var search_markers_array = [];
 var run_markers_array = [];
-var color_array = ['blue', 'red', 'green', 'orange', 'cyan'];
+var color_array = ['blue', 'red', 'green', 'orange', 'black'];
 
 
 var baseURL = 'https://1048144.app.netsuite.com';
@@ -73,6 +73,7 @@ $('.collapse').on('hide.bs.collapse', function() {
 function clientPageInit(type) {
     $('#loader').remove();
     $('.uir-outside-fields-table').css('width', '-webkit-fill-available');
+    $('.zee_dropdown').selectpicker();
 
     /*    $('.zee_dropdown').selectator({
             keepOpen: true,
@@ -595,7 +596,7 @@ function customizeDirectionsPanel(directionsDisplay) {
 }, 100);*/
 
 $(document).on('click', '#applyZee', function(event) {
-    var zee = $('.zee_dropdown').val();
+    var zee = $('.zee_dropdown').selectpicker('val');
 
     var url = baseURL + "/app/site/hosting/scriptlet.nl?script=887&deploy=1";
 
@@ -830,14 +831,19 @@ $(document).on('click', '#runMarkers', function(event) {
 });
 
 $(document).on('click', '#printDirections', function(event) {
-    var zee_text = nlapiGetFieldValue('zee_text');
+    var zee_text_array = nlapiGetFieldValue('zee_text');
+    var zee_text = zee_text_array.split(',')[0];
     var day_text = nlapiGetFieldValue('day_text');
     var before_time = nlapiGetFieldValue('beforetime');
     var after_time = nlapiGetFieldValue('aftertime');
 
-    if (!isNullorEmpty(run) && run != 0) { //one run
-        var run_text = nlapiGetFieldValue('run_text');
-        var op_text = nlapiGetFieldValue('op_text');
+    var run_text_array = nlapiGetFieldValue('run_text');
+    var run_text = run_text_array.split(',')[0];
+    console.log('run_text', run_text);
+
+    if (!isNullorEmpty(run_text)) { //one run
+        var op_text_array = nlapiGetFieldValue('op_text');
+        var op_text = op_text_array.split(',')[0];
         var title = '' + zee_text + ' - ' + run_text + ' (' + op_text + ') - ' + day_text + '';
     } else { //the all run
         var title = '' + zee_text + ' - ALL - ' + day_text + '';
