@@ -75,46 +75,41 @@ function clientPageInit(type) {
     $('.uir-outside-fields-table').css('width', '-webkit-fill-available');
     $('.zee_dropdown').selectpicker();
 
-    /*    $('.zee_dropdown').selectator({
-            keepOpen: true,
-            showAllOptionsOnFocus: true,
-            selectFirstOptionOnSearch: false
-        });*/
-
-    // var zeeRecord = nlapiLoadRecord('partner', 228329);
-    // var stop_freq_json = zeeRecord.getFieldValue('custentity_zee_run', stop_freq_json);
+    //LOAD MAP & TERRITORIES
+    map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 4,
+        center: {
+            lat: -27.833,
+            lng: 133.583
+        }
+    });
+    var legend = document.getElementById('legend');
+    map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(legend);
+    map.data.loadGeoJson(
+        'https://1048144.app.netsuite.com/core/media/media.nl?id=3772482&c=1048144&h=4579935b386159057056&_xt=.js');
+    map.data.addListener('mouseover', function(event) {
+        $('#zee_territory').val(event.feature.getProperty('Territory'));
+        console.log('event.feature.getProperty(territory)', event.feature.getProperty('Territory'));
+    });
+    map.data.addListener('mouseout', function(event) {
+        $('#zee_territory').val('');
+    })
 
     var zee_string = nlapiGetFieldValue('zee');
-    console.log('zee_string', zee_string);
+    //console.log('zee_string', zee_string);
     if (!isNullorEmpty(zee_string)) {
         zee_array = zee_string.split(',');
         zee_text_array = nlapiGetFieldValue('zee_text').split(',');
     }
-    if (zee_array.length != 0) {
-        map = new google.maps.Map(document.getElementById('map'), {
-            zoom: 4,
-            center: {
-                lat: -27.833,
-                lng: 133.583
-            }
-        });
-        //var src = 'https://1048144-sb3.app.netsuite.com/core/media/media.nl?id=1318405&c=1048144_SB3&h=f00a0e9da674eb0036b9&_xt=.txt';
-        var src = 'https://1048144.app.netsuite.com/core/media/media.nl?id=1318405&c=1048144&h=c8ae3e4d351aca0ce8d9&_xt=.txt';
-        //var src = 'https://developers.google.com/maps/documentation/javascript/examples/kml/westcampus.kml'
-        var kmlLayer = new google.maps.KmlLayer(src, {
-            //url: 'https://1048144-sb3.app.netsuite.com/core/media/media.nl?id=1318405&c=1048144_SB3&h=f00a0e9da674eb0036b9&mv=kbn80l5c&_xt=.txt', 
-            suppressInfoWindows: true,
-            preserveViewport: false,
-            map: map
-        });
-        console.log('kmlLayer', kmlLayer);
 
+    if (zee_array.length != 0) {
         op_array = nlapiGetFieldValue('op').split(',');
         run_array = nlapiGetFieldValue('run').split(',');
         optimize_array = nlapiGetFieldValue('optimisation').split(',');
         day = parseInt(nlapiGetFieldValue('day'));
         before_time = nlapiGetFieldValue('beforetime');
         after_time = nlapiGetFieldValue('aftertime');
+        console.log('zee_array', zee_array);
         console.log('op_array', op_array);
         console.log('run_array', run_array);
         console.log('optimize_array', optimize_array);
@@ -123,13 +118,13 @@ function clientPageInit(type) {
         console.log('after_time', after_time);
         for (i = 0; i < zee_array.length; i++) {
             var zee = zee_array[i];
-            console.log('i', i);
+            //console.log('i', i);
             var run = run_array[i];
             var op = op_array[i];
             optimize = optimize_array[i];
-            console.log('run', run);
-            console.log('op', op);
-            console.log('optimize', optimize);
+            //console.log('run', run);
+            //console.log('op', op);
+            //console.log('optimize', optimize);
             if (optimize == 'true') {
                 optimize = true;
             } else if (optimize == 'false') {
@@ -145,15 +140,14 @@ function clientPageInit(type) {
                 /*                day = day_array[i];
                                 before_time = beforetime_array[i];
                                 after_time = aftertime_array[i];*/
-                console.log('day', day);
-                console.log('day of week ' + days_of_week[day]);
-                console.log('before_time', before_time);
-                console.log('after_time', after_time);
+                //console.log('day', day);
+                //console.log('day of week ' + days_of_week[day]);
+                //console.log('before_time', before_time);
+                //console.log('after_time', after_time);
 
                 var runJSON_array = getRunJSON(zee, run, day, before_time, after_time);
-                console.log('runJSON_array', runJSON_array);
+                //console.log('runJSON_array', runJSON_array);
                 var parsedStopFreq = runJSON_array[0];
-                //var stops = runJSON_array[0];
                 var firststop_time = runJSON_array[1];
                 var laststop_time = runJSON_array[2];
 
@@ -172,7 +166,6 @@ function clientPageInit(type) {
 
 
                 if (stops_number != 0) {
-                    //if (stops_number > 25) {
                     var y_length = Math.ceil(stops_number / 25);
                     console.log(y_length)
                     var each_request_length = parseInt(Math.ceil((stops_number + (y_length - 1)) / y_length));
@@ -205,28 +198,9 @@ function clientPageInit(type) {
                         waypoint_otherproperties[y] += ']';
 
                     }
-                    //}
-
-
-                    // for (var x = 0; x < parsedStopFreq.data.length; x++) {
-                    //     if (!isNullorEmpty(parsedStopFreq.data[x].address)) {
-
-                    //         waypoint_json += '{"location": "' + parsedStopFreq.data[x].address + '",';
-                    //         if (x == (parsedStopFreq.data.length - 1)) {
-                    //             waypoint_json += '"stopover": ' + true + '}';
-                    //         } else {
-                    //             waypoint_json += '"stopover": ' + true + '},';
-                    //         }
-                    //     }
-
-                    // }
-
-                    // waypoint_json += ']';
 
                     console.log(waypoint_json);
                     console.log(waypoint_otherproperties);
-
-                    // var parsedWayPoint = JSON.parse(waypoint_json);
 
                     var directionsService = new google.maps.DirectionsService();
                     var directionsDisplay = new google.maps.DirectionsRenderer({
@@ -249,23 +223,15 @@ function clientPageInit(type) {
                     addMarker(map, stepDisplay, waypoint_otherproperties, zee);
                     //customizeDirectionsPanel(directionsDisplay);
 
-                    $('.row_address').removeClass('hide');
                     $('.row_time').removeClass('hide');
                     $('.print_section').removeClass('hide');
-                    $('.map_section').removeClass('hide');
                 } else {
-                    console.log('$(#run_not_scheduled_ + zee + )', $('#run_not_scheduled_' + zee + ''))
                     $('#run_not_scheduled_' + zee + '').removeClass('hide');
-                    $('.map_section').addClass('hide');
-                    $('.row_address').addClass('hide');
                     $('.print_section').addClass('hide');
                 }
             }
+            $('#runMarkers').removeClass('hide');
         }
-
-        var legend = document.getElementById('legend');
-        map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(legend);
-        $('#legend').removeClass('hide');
 
         if (zee_array.length > 1) { //HIDE THE RUN MARKERS BY DEFAULT IF MULTIPLE ZEES
             for (i = 0; i < run_markers_array.length; i++) {
@@ -276,7 +242,9 @@ function clientPageInit(type) {
             $('#runMarkers').toggleClass('btn-success');
             $('#runMarkers').toggleClass('btn-danger');
         }
+        $('.legend_icons').removeClass('hide');
     }
+    $('.map_section').removeClass('hide');
 
 }
 
@@ -319,7 +287,7 @@ function addMarker(map, stepDisplay, waypoint_otherproperties, zee) {
             //console.log('letter', letter);
 
             //Customer location or NCL
-            // Marker SVG Path: https://material.io/tools/icons/?icon=place&style=baseline
+            // Marker SVG Path: 
             var MAP_MARKER = 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z';
             if (parsedWayPointProperties[x].location_type == 'ncl') {
                 color = '#575756'
@@ -522,7 +490,7 @@ function getTravellingTime(directionResult) {
         //console.log('directionResult.routes[0].legs[i].duration.value', directionResult.routes[0].legs[i].duration.value);
         travellingTime_sec += directionResult.routes[0].legs[i].duration.value;
     }
-    console.log('travellingTime_sec', travellingTime_sec);
+    //console.log('travellingTime_sec', travellingTime_sec);
     travellingTime_array = convertSecondsToHours(travellingTime_sec);
     if (!isNullorEmpty(travellingTime_array[0])) {
         travellingTime += '' + travellingTime_array[0] + 'h';
@@ -604,23 +572,6 @@ $(document).on('click', '#applyZee', function(event) {
 
     window.location.href = url;
 });
-
-/*$(document).on('change', '.day_dropdown', function(event) {
-    var day = $(this).val();
-    var run = nlapiGetFieldValue('run');
-    var op = nlapiGetFieldValue('op');
-    var time_window = nlapiGetFieldValue('time_window');
-
-    var url = baseURL + "/app/site/hosting/scriptlet.nl?script=887&deploy=1";
-
-    url += "&zee=" + zee + "";
-    url += "&day=" + day + "";
-    url += "&op=" + op + "";
-    url += "&run=" + run + "";
-    url += "&time_window=" + time_window + "";
-
-    window.location.href = url;
-});*/
 
 $(document).on('change', '.op_dropdown', function(event) {
     var op = $(this).val();
@@ -830,6 +781,19 @@ $(document).on('click', '#runMarkers', function(event) {
     $('#runMarkers').toggleClass('btn-danger');
 });
 
+$(document).on('click', '#territoryMap', function(event) {
+    console.log($(this).val());
+    if ($(this).val() == 'HIDE TERRITORY MAP') {
+        map.data.setStyle({visible: false});
+        $('#territoryMap').val('SHOW TERRITORY MAP');
+    } else if ($(this).val() == 'SHOW TERRITORY MAP') {
+        map.data.setStyle({visible: true});
+        $('#territoryMap').val('HIDE TERRITORY MAP');
+    }
+    $('#territoryMap').toggleClass('btn-success');
+    $('#territoryMap').toggleClass('btn-danger');
+});
+
 $(document).on('click', '#printDirections', function(event) {
     var zee_text_array = nlapiGetFieldValue('zee_text');
     var zee_text = zee_text_array.split(',')[0];
@@ -872,11 +836,11 @@ function directionsPanelOverflow() {
 }
 
 function getRunJSON(zee, run, day, before_time, after_time) {
-    console.log('zee', zee);
-    console.log('run', run);
-    console.log('day', day);
-    console.log('before_time', before_time);
-    console.log('after_time', after_time);
+    //console.log('zee', zee);
+    //console.log('run', run);
+    //console.log('day', day);
+    //console.log('before_time', before_time);
+    //console.log('after_time', after_time);
     var serviceLegSearch = nlapiLoadSearch('customrecord_service_leg', 'customsearch_rp_leg_freq_all_2');
 
     var newFilters = new Array();
@@ -1459,66 +1423,13 @@ function getRunJSON(zee, run, day, before_time, after_time) {
 
     stop_freq_json += ']}';
 
-    console.log(stop_freq_json);
+    //console.log(stop_freq_json);
     var parsedStopFreq = JSON.parse(stop_freq_json);
-    console.log(parsedStopFreq);
+    //console.log(parsedStopFreq);
 
     return [parsedStopFreq, firststop_time, laststop_time];
 }
 
-/*function saveRecord() {
-
-    var code_elem = document.getElementsByClassName("state_code");
-    var same_day_elem = document.getElementsByClassName("same_day_rate");
-    var next_day_elem = document.getElementsByClassName("next_day_rate");
-    var code = [];
-    var same_day_array = [];
-    var next_day_array = [];
-
-    for (var i = 0; i < code_elem.length; ++i) {
-        code[i] = code_elem[i].value;
-        same_day_array[i] = same_day_elem[i].value;
-        next_day_array[i] = next_day_elem[i].value;
-    }
-
-    var total_array = code.toString();
-
-    var strs = [];
-    var text_field_length = 300
-
-    // while (total_array.length >= text_field_length) {
-    //  var pos = (total_array.substring(0, text_field_length).lastIndexOf(','));
-    //  pos = pos <= text_field_length ? (text_field_length + 1) : pos;
-    //  strs.push(total_array.substring(0, pos));
-    //  var i = total_array.indexOf(',', pos) + 1;
-    //  if (i < pos || i > pos + text_field_length) {
-    //      i = pos;
-    //  }
-    //  total_array = total_array.substring(i);
-    // }
-    // strs.push(total_array);
-
-    // console.log(strs);
-
-
-    console.log(total_array)
-    console.log(same_day_array)
-    console.log(next_day_array)
-
-
-    nlapiSetFieldValue('code_array', total_array);
-    nlapiSetFieldValue('same_day_array', same_day_array.toString());
-    nlapiSetFieldValue('next_day_array', next_day_array.toString());
-    // if (!isNullorEmpty(strs[1])) {
-    //  nlapiSetFieldValue('code_array2', strs[1]);
-    // }
-    // if (!isNullorEmpty(strs[2])) {
-    //  nlapiSetFieldValue('code_array3', strs[2]);
-    // }
-
-    return true;
-
-}*/
 
 function convertSecondsToHours(secs) {
     var hours = Math.floor(secs / (60 * 60));
@@ -1630,13 +1541,4 @@ function convertTo24Hour(time) {
         time = time.replace(hours, (hours + 12));
     }
     return time.replace(/( AM| PM)/, '');
-}
-
-function AddStyle(cssLink, pos) {
-    var tag = document.getElementsByTagName(pos)[0];
-    var addLink = document.createElement('link');
-    addLink.setAttribute('type', 'text/css');
-    addLink.setAttribute('rel', 'stylesheet');
-    addLink.setAttribute('href', cssLink);
-    tag.appendChild(addLink);
 }

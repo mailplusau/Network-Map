@@ -28,27 +28,6 @@ var optimize_array = [];
 var color_array = ['blue', 'red', 'green', 'orange', 'black'];
 
 
-function stateNames(state) {
-    switch (state) {
-        case 'ACT':
-            return 'Australian Capital Territory';
-        case 'NSW':
-            return 'New South Wales';
-        case 'VIC':
-            return 'Victoria';
-        case 'QLD':
-            return 'Queensland';
-        case 'WA':
-            return 'Western Australia';
-        case 'SA':
-            return 'South Australia';
-        case 'NT':
-            return 'Northern Territory';
-        case 'TAS':
-            return 'Tasmania';
-    }
-}
-
 function summary_page(request, response) {
 
     if (request.getMethod() === "GET") {
@@ -145,7 +124,7 @@ function summary_page(request, response) {
         inlineQty += '<div class="container" id="main_container" style="padding-top: 3%;"><div class="container row_parameters">';
         //SELECT FRANCHISEE
         if (role != 1000) {
-            inlineQty += '<div class="form-group row"><div class="col-sm-10"><div class="input-group"><span class="input-group-addon">SELECT ZEE</span><select class="form-control zee_dropdown selectpicker" multiple data-actions-box="true">';
+            inlineQty += '<div class="form-group row"><div class="col-sm-10"><div class="input-group"><span class="input-group-addon">SELECT ZEE</span><select class="form-control zee_dropdown selectpicker" multiple data-actions-box="false">';
 
             var searched_zee = nlapiLoadSearch('partner', 'customsearch_job_inv_process_zee');
             var resultSet_zee = searched_zee.runSearch();
@@ -172,7 +151,9 @@ function summary_page(request, response) {
             inlineQty += '<div class="col-sm-2"><input type="button" class="btn btn-primary" id="applyZee" value="APPLY ZEE" style="width: 100%;"/></div>';
 
             inlineQty += '</div>';
-            //zee = request.getParameter('zee');
+        } else { //FRANCHISEE LOG IN
+            var zee_record = nlapiLoadRecord('partner', zee_array[0]);
+            zee_text_array[0] = zee_record.getFieldValue('companyname');
         }
 
         if (zee_array.length != 0) {
@@ -363,7 +344,7 @@ function summary_page(request, response) {
         }
 
         //SEARCH FOR AN ADDRESS
-        inlineQty += '<div class="container row_address hide">'
+        inlineQty += '<div class="container row_address">'
         inlineQty += '<div class="form-group row">';
         inlineQty += '<div class="col-sm-12 heading1"><h4><span class="label label-default col-sm-12">SEARCH FOR A PLACE</span></h4></div>';
         inlineQty += '</div>';
@@ -390,27 +371,29 @@ function summary_page(request, response) {
         inlineQty += '<div class="col-xs-3"></div>';
         inlineQty += '<div class="col-xs-2"><input type="button" class="btn btn-warning" id="clearMarkers" value="CLEAR MARKERS" style="width: 100%;"/></div>';
         inlineQty += '<div class="col-xs-2"><input type="button" class="btn btn-primary" id="viewOnMap" value="VIEW ON MAP" style="width: 100%;"/></div>';
-        inlineQty += '<div class="col-xs-2"><input type="button" class="btn btn-danger" id="runMarkers" value="HIDE RUN MARKERS" style="width: 100%;"/></div>';
+        inlineQty += '<div class="col-xs-2"><input type="button" class="btn btn-danger" id="territoryMap" value="HIDE TERRITORY MAP" style="width: 100%;"/></div>';
+        inlineQty += '<div class="col-xs-2"><input type="button" class="btn btn-danger hide" id="runMarkers" value="HIDE RUN MARKERS" style="width: 100%;"/></div>';
         inlineQty += '</div>';
         inlineQty += '</div>';
 
 
         //MAP
-        var map_size = 12;
         var directionsPanel_html = '';
         var print_section = '';
         if (zee_array.length == 1) { //show the directionsPanel only if one zee selected
-            directionsPanel_html += '<div class="col-sm-4" id="directionsPanel" style="height:500px; overflow:auto"></div>';
+            directionsPanel_html += '<div class="hide" id="directionsPanel" style="height:500px; overflow:auto"></div>';
             print_section += '</br><div class="row print_section hide"><div class="col-xs-10"></div><div class="col-xs-2"><input type="button" class="btn btn-info" id="printDirections" value="PRINT DIRECTIONS" style="width: 100%;"/></div></div></div>';
-            map_size = 8;
         }
         inlineQty += '</br>';
         inlineQty += '<div class="container map_section hide"><div class="row">';
-        inlineQty += '<div class="col-sm-' + map_size + '" id="map" style="height: 500px"><div id="loader"><img src="https://1048144.app.netsuite.com/core/media/media.nl?id=2089999&c=1048144&h=e0aef405c22b65dfe546" alt="loader" /></div></div>';
-        inlineQty += '<div class="hide" id="legend" style="background-color: rgb(255, 255, 255);box-shadow: rgba(0, 0, 0, 0.3) 0px 1px 4px -1px;border-radius: 2px;z-index: 0;position: absolute;bottom: 26px;left: 0px;margin-left: 5px;padding: 3px;"><div><svg height="23" width="32"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="black" fill="#575756"/></svg><span style="font-family: sans-serif;">Non Customer Location</span></div><div><svg height="23" width="32"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="black" fill="#008675"/></svg><span style="font-family: sans-serif;">Customer Location</span></div>';
+        inlineQty += '<div class="col-sm-12" id="map" style="height: 500px"><div id="loader"><img src="https://1048144.app.netsuite.com/core/media/media.nl?id=2089999&c=1048144&h=e0aef405c22b65dfe546" alt="loader" /></div></div>';
+        inlineQty += '<div id="legend">';
+        inlineQty += '<div class="hide legend_icons" style="background-color: rgb(255, 255, 255);box-shadow: rgba(0, 0, 0, 0.3) 0px 1px 4px -1px;border-radius: 2px;left: 0px;margin-left: 5px;padding: 3px;"><div><svg height="23" width="32"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="black" fill="#575756"/></svg><span style="font-family: sans-serif;">Non Customer Location</span></div><div><svg height="23" width="32"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="black" fill="#008675"/></svg><span style="font-family: sans-serif;">Customer Location</span></div>';
         for (i = 0; i < zee_array.length; i++) {
             inlineQty += '<div><svg height="15" width="32"><line x1="2" y1="10" x2="25" y2="10" style="stroke:' + color_array[i] + ';stroke-width:2" /></svg><span style="font-family: sans-serif;">' + zee_text_array[i] + '</span></div>';
         }
+        inlineQty += '</div>';
+        inlineQty += '<div style="background-color: rgb(255, 255, 255);box-shadow: rgba(0, 0, 0, 0.3) 0px 1px 4px -1px;border-radius: 2px;left: 0px;margin-left: 5px;padding: 3px;"><input class="form-control" type="textarea" placeholder="Territory" id="zee_territory"/></div>';
         inlineQty += '</div>';
 
         inlineQty += directionsPanel_html;
@@ -439,46 +422,7 @@ function summary_page(request, response) {
         //form.addSubmitButton('Submit');
 
         response.writePage(form);
-    } else {
-        /*        var zee2 = request.getParameter('zee');
-                var code_array = request.getParameter('code_array');
-                var same_day_array = request.getParameter('same_day_array');
-                var next_day_array = request.getParameter('next_day_array');
-
-                code_array = code_array.split(',');
-                same_day_array = same_day_array.split(',');
-                next_day_array = next_day_array.split(',');
-
-                var network_JSON = '['
-
-                for (var x = 0; x < code_array.length; x++) {
-
-                    network_JSON += '{"suburbs" : "' + code_array[x] + '",';
-                    network_JSON += '"same_day" : "' + same_day_array[x] + '",'
-                    network_JSON += '"next_day" : "' + next_day_array[x] + '"},'
-                }
-
-                network_JSON = network_JSON.substring(0, network_JSON.length - 1);
-
-                network_JSON += ']';
-
-                var partner_record = nlapiLoadRecord('partner', parseInt(zee2));
-
-                partner_record.setFieldValue('custentity_network_matrix_main', code_array);
-                partner_record.setFieldValue('custentity_network_matrix_json', network_JSON);
-
-                nlapiSubmitRecord(partner_record);
-
-                var params = {};
-
-                if (role == 1000) {
-                    nlapiSetRedirectURL('TASKLINK', 'CARD_-29');
-                } else {
-                    nlapiSetRedirectURL('SUITELET', 'customscript_sl_network_map', 'customdeploy_network_map', null, params);
-                }*/
-
-
-    }
+    } else {}
 
 }
 
