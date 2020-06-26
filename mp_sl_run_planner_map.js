@@ -117,14 +117,14 @@ function summary_page(request, response) {
 
         inlineQty += '<div id="myModal" class="modal fade bs-example-modal-sm" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true"><div class="modal-dialog modal-sm" role="document" style="width :max-content"><div class="modal-content" style="width :max-content; max-width: 900px"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button><h4 class="modal-title panel panel-info" id="exampleModalLabel">Run Summary</h4><br> </div><div class="modal-body"></div><div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal">Close</button></div></div></div></div>';
 
-        inlineQty += '<div class="se-pre-con"></div><button type="button" class="btn btn-sm btn-info instruction_button" data-toggle="collapse" data-target="#demo">Click for Instructions</button><div id="demo" style="background-color: #cfeefc !important;border: 1px solid #417ed9;padding: 10px 10px 10px 20px;width:96%;position:absolute" class="collapse"><b><u>IMPORTANT INSTRUCTIONS:</u></b>';
+        inlineQty += '<div class="se-pre-con"></div><button type="button" class="btn btn-sm btn-info instruction_button" data-toggle="collapse" data-target="#demo" style="margin-top: 10px;">Click for Instructions</button><div id="demo" style="background-color: #cfeefc !important;border: 1px solid #417ed9;padding: 10px 10px 10px 20px;width:96%;position:absolute" class="collapse"><b><u>IMPORTANT INSTRUCTIONS:</u></b>';
         inlineQty += '<ul><li><input type="button" class="btn btn-xs btn-success" id="apply" value="APPLY" disabled/> - <ul><li>Click to apply the details : day, run, time.</li></ul></li>';
         inlineQty += '</ul></div>';
 
         inlineQty += '<div class="container" id="main_container" style="padding-top: 3%;"><div class="container row_parameters">';
         //SELECT FRANCHISEE
         if (role != 1000) {
-            inlineQty += '<div class="form-group row"><div class="col-sm-10"><div class="input-group"><span class="input-group-addon">SELECT ZEE</span><select class="form-control zee_dropdown selectpicker" multiple data-actions-box="false">';
+            inlineQty += '<div class="form-group row"><div class="col-sm-10"><div class="input-group"><span class="input-group-addon">SELECT ZEE</span><select class="form-control zee_dropdown selectpicker" multiple data-actions-box="false" data-max-options="5">';
 
             var searched_zee = nlapiLoadSearch('partner', 'customsearch_job_inv_process_zee');
             var resultSet_zee = searched_zee.runSearch();
@@ -381,7 +381,7 @@ function summary_page(request, response) {
         var directionsPanel_html = '';
         var print_section = '';
         if (zee_array.length == 1) { //show the directionsPanel only if one zee selected
-            directionsPanel_html += '<div class="hide" id="directionsPanel" style="height:500px; overflow:auto"></div>';
+            directionsPanel_html += '<div class="col-sm-6 hide" id="directionsPanel" style="height:500px; overflow:auto"></div>';
             print_section += '</br><div class="row print_section hide"><div class="col-xs-10"></div><div class="col-xs-2"><input type="button" class="btn btn-info" id="printDirections" value="PRINT DIRECTIONS" style="width: 100%;"/></div></div></div>';
         }
         inlineQty += '</br>';
@@ -420,6 +420,13 @@ function summary_page(request, response) {
         form.setScript('customscript_cl_run_planner_map');
 
         //form.addSubmitButton('Submit');
+        nlapiLogExecution('DEBUG', 'zee_array', zee_array);
+        nlapiLogExecution('DEBUG', 'zee_array.length', zee_array.length);
+
+        if (role == 1000) { //Franchisee
+            form.addButton('run_scheduler', 'Run Scheduler', 'onclick_runScheduler(' + zee_array[0] + ')');
+            form.addButton('smc', 'Service Management Console', 'onclick_smc(' + zee_array[0] + ')');
+        }
 
         response.writePage(form);
     } else {}
