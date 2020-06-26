@@ -73,7 +73,10 @@ $('.collapse').on('hide.bs.collapse', function() {
 function clientPageInit(type) {
     $('#loader').remove();
     $('.uir-outside-fields-table').css('width', '-webkit-fill-available');
-    $('.zee_dropdown').selectpicker();
+    //$('.zee_dropdown').selectpicker();
+    $('.zee_dropdown').selectpicker({
+        liveSearch: true,
+    });
 
     //LOAD MAP & TERRITORIES
     map = new google.maps.Map(document.getElementById('map'), {
@@ -146,7 +149,7 @@ function clientPageInit(type) {
                 //console.log('after_time', after_time);
 
                 var runJSON_array = getRunJSON(zee, run, day, before_time, after_time);
-                //console.log('runJSON_array', runJSON_array);
+                console.log('runJSON_array', runJSON_array);
                 var parsedStopFreq = runJSON_array[0];
                 var firststop_time = runJSON_array[1];
                 var laststop_time = runJSON_array[2];
@@ -186,9 +189,9 @@ function clientPageInit(type) {
                                     waypoint_otherproperties[y] += '{"name": "' + parsedStopFreq.data[x - y].title + '",';
                                     waypoint_otherproperties[y] += '"location_type": "ncl",';
                                 }
+                                waypoint_json[y] += '"stopover": ' + true + '},';
                                 waypoint_otherproperties[y] += '"time": "' + parsedStopFreq.data[x - y].start + '",';
                                 waypoint_otherproperties[y] += '"lat": "' + parsedStopFreq.data[x - y].lat + '",';
-                                waypoint_json[y] += '"stopover": ' + true + '},';
                                 waypoint_otherproperties[y] += '"lng": "' + parsedStopFreq.data[x - y].lon + '"},';
                             }
                         }
@@ -221,7 +224,6 @@ function clientPageInit(type) {
                     directionsDisplay.setPanel(document.getElementById('directionsPanel'));
                     calculateAndDisplayRoute(directionsDisplay, directionsService, waypoint_json, markerArray, stepDisplay, map, waypoint_otherproperties, zee);
                     addMarker(map, stepDisplay, waypoint_otherproperties, zee);
-                    //customizeDirectionsPanel(directionsDisplay);
 
                     $('.row_time').removeClass('hide');
                     $('.print_section').removeClass('hide');
@@ -310,21 +312,10 @@ function addMarker(map, stepDisplay, waypoint_otherproperties, zee) {
                 labelOrigin: new google.maps.Point(12, 10),
             }
 
-            /*            if (parsedWayPointProperties[x].location_type == 'ncl') {
-                            image = 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=|1E890B'
-                        } else if (parsedWayPointProperties[x].location_type == 'customer') {
-                            image = 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=|FE7569'
-                        }*/
-
             //Create the marker
             var marker = new google.maps.Marker({
                 position: position,
                 map: map,
-                /*                icon: {
-                                    url: image,
-                                    scaledSize: new google.maps.Size(27, 43),
-                                    labelOrigin: new google.maps.Point(14, 14),
-                                },*/
                 icon: icon,
                 title: parsedWayPointProperties[x].name,
                 label: {
@@ -377,24 +368,6 @@ function calculateAndDisplayRoute(directionsDisplay, directionsService, waypoint
         var unsortedResults = [{}]; // to hold the counter and the results themselves as they come back, to later sort
         var directionsResultsReturned = 0;
 
-        // directionsService.route({
-        //     origin: start,
-        //     destination: end,
-        //     waypoints: waypts,
-        //     provideRouteAlternatives: true,
-        //     optimizeWaypoints: false,
-        //     travelMode: 'DRIVING',
-        //     drivingOptions: {
-        //         departureTime: new Date(),
-        //         trafficModel: 'pessimistic'
-        //     },
-        // }, function(response, status) {
-        //     if (status === 'OK') {
-        //         directionsDisplay.setDirections(response);
-        //     } else {
-        //         window.alert('Directions request failed due to ' + status);
-        //     }
-        // });
         var request = {
             origin: start,
             destination: end,
@@ -403,25 +376,7 @@ function calculateAndDisplayRoute(directionsDisplay, directionsService, waypoint
             optimizeWaypoints: optimize,
             travelMode: window.google.maps.TravelMode.DRIVING
         };
-        // directionsService.route(request, function(result, status) {
-        //     if (status == window.google.maps.DirectionsStatus.OK) {
-        //         if (directionsResultsReturned == 0) { // first bunch of results in. new up the combinedResults object
-        //             combinedResults = result;
-        //             directionsResultsReturned++;
-        //         } else {
-        //             // only building up legs, overview_path, and bounds in my consolidated object. This is not a complete
-        //             // directionResults object, but enough to draw a path on the map, which is all I need
-        //             combinedResults.routes[0].legs = combinedResults.routes[0].legs.concat(result.routes[0].legs);
-        //             combinedResults.routes[0].overview_path = combinedResults.routes[0].overview_path.concat(result.routes[0].overview_path);
 
-        //             combinedResults.routes[0].bounds = combinedResults.routes[0].bounds.extend(result.routes[0].bounds.getNorthEast());
-        //             combinedResults.routes[0].bounds = combinedResults.routes[0].bounds.extend(result.routes[0].bounds.getSouthWest());
-        //             directionsResultsReturned++;
-        //         }
-        //         if (directionsResultsReturned == waypoint_json.length) // we've received all the results. put to map
-        //             directionsDisplay.setDirections(combinedResults);
-        //     }
-        // });
         var delayFactor = 0;
         (function m_get_directions_route(kk) {
             directionsService.route(request, function(result, status) {
@@ -526,42 +481,14 @@ function attachInstructionText(stepDisplay, marker, text, map) {
     });
 }
 
-function customizeDirectionsPanel(directionsDisplay) {
-    //var row = document.getElementsByClassName("row");
-    var row = $('.row');
-    console.log('row', row);
-    console.log('row.length', row.length);
-    //var adp = document.getElementsByClassName("adp-text");
-    var adp = $('.adp-text');
-    console.log('adp', adp);
-    console.log('adp.length', adp.length);
-    console.log('adp[0]', adp[0]);
-    /*    for (i = 0; i < adp.length; i++) {
-            console.log('adp[i]', adp[i]);
-        }*/
-    for (i = 0; i < adp.length; i++) {
-        console.log(i);
-    }
-
-    //fetch the elements
-    var nodes = directionsDisplay.getPanel().querySelectorAll('td.adp-text');
-    console.log('nodes', nodes);
-    for (var n = 0; n < nodes.length; ++n) {
-        //assign the text-content of the element to the innerHTML-property
-        nodes[n].innerHTML = nodes[n].firstChild.data;
-    }
+function onclick_runScheduler(zee) {
+    window.open(nlapiResolveURL('SUITELET', 'customscript_sl_full_calendar', 'customdeploy_sl_full_calender') + "&zee=" + zee +'');
 }
 
-/*setTimeout(function() {
-    //fetch the elements
-    var nodes = directionsDisplay.getPanel().querySelectorAll('td.adp-text');
-    for (var n = 0; n < nodes.length; ++n) {
-        //assign the text-content of the element to the innerHTML-property
-        nodes[n].innerHTML = nodes[n].firstChild.data;
-    }
-    //show the panel
-    directionsDisplay.getPanel().style.visibility = 'visible';
-}, 100);*/
+function onclick_smc(zee) {
+    window.open(nlapiResolveURL('SUITELET', 'customscript_sl_smc_summary', 'customdeploy_sl_smc_summary') + "&zee=" + zee +'');
+}
+
 
 $(document).on('click', '#applyZee', function(event) {
     var zee = $('.zee_dropdown').selectpicker('val');
@@ -752,6 +679,8 @@ $(document).on('click', '#viewOnMap', function(event) {
         //label: 'NEW',
     });
     search_markers_array[search_markers_array.length] = new_marker; //store the markers created to be able to delete them
+    map.setCenter(position);
+    map.setZoom(14);
 });
 
 $(document).on('click', '#clearMarkers', function(event) {
@@ -784,10 +713,14 @@ $(document).on('click', '#runMarkers', function(event) {
 $(document).on('click', '#territoryMap', function(event) {
     console.log($(this).val());
     if ($(this).val() == 'HIDE TERRITORY MAP') {
-        map.data.setStyle({visible: false});
+        map.data.setStyle({
+            visible: false
+        });
         $('#territoryMap').val('SHOW TERRITORY MAP');
     } else if ($(this).val() == 'SHOW TERRITORY MAP') {
-        map.data.setStyle({visible: true});
+        map.data.setStyle({
+            visible: true
+        });
         $('#territoryMap').val('HIDE TERRITORY MAP');
     }
     $('#territoryMap').toggleClass('btn-success');
@@ -820,6 +753,7 @@ $(document).on('click', '#printDirections', function(event) {
     }
     console.log('printing', title);
     $('#directionsPanel').css("overflow", "visible");
+    $('#directionsPanel').removeClass('hide');
     printJS({
         printable: 'directionsPanel',
         type: 'html',
@@ -833,6 +767,7 @@ $(document).on('click', '#printDirections', function(event) {
 
 function directionsPanelOverflow() {
     $('#directionsPanel').css("overflow", "auto");
+    $('#directionsPanel').addClass('hide');
 }
 
 function getRunJSON(zee, run, day, before_time, after_time) {
@@ -1423,7 +1358,7 @@ function getRunJSON(zee, run, day, before_time, after_time) {
 
     stop_freq_json += ']}';
 
-    //console.log(stop_freq_json);
+    console.log(stop_freq_json);
     var parsedStopFreq = JSON.parse(stop_freq_json);
     //console.log(parsedStopFreq);
 
