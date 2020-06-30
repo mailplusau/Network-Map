@@ -88,8 +88,8 @@ function clientPageInit(type) {
     });
     var legend = document.getElementById('legend');
     map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(legend);
-    map.data.loadGeoJson(
-        'https://1048144.app.netsuite.com/core/media/media.nl?id=3772482&c=1048144&h=4579935b386159057056&_xt=.js');
+    map.data.loadGeoJson('https://1048144.app.netsuite.com/core/media/media.nl?id=3772482&c=1048144&h=4579935b386159057056&_xt=.js');
+    //map.data.loadGeoJson('https://1048144-sb3.app.netsuite.com/core/media/media.nl?id=3771516&c=1048144_SB3&h=afd38c5aed85b40b9cc0&_xt=.js');
     map.data.addListener('mouseover', function(event) {
         $('#zee_territory').val(event.feature.getProperty('Territory'));
         console.log('event.feature.getProperty(territory)', event.feature.getProperty('Territory'));
@@ -418,9 +418,9 @@ function calculateAndDisplayRoute(directionsDisplay, directionsService, waypoint
 
                         directionsDisplay.setDirections(combinedResults);
                         console.log('combinedResults', combinedResults);
-                        getTravellingTime(combinedResults);
-                        $('#travelling_time_' + zee + '').val(getTravellingTime(combinedResults));
-                        console.log('getTravellingTime', getTravellingTime(combinedResults));
+                        //getTravellingDetails(combinedResults);
+                        $('#travelling_time_' + zee + '').val(getTravellingDetails(combinedResults)[0]);
+                        $('#travelling_distance_' + zee + '').val(getTravellingDetails(combinedResults)[1] + ' km');
                         //showSteps(combinedResults, markerArray, stepDisplay, map, parsedWayPointProperties);
                     }
                 } else if (status == window.google.maps.DirectionsStatus.OVER_QUERY_LIMIT) {
@@ -437,13 +437,15 @@ function calculateAndDisplayRoute(directionsDisplay, directionsService, waypoint
     }
 }
 
-function getTravellingTime(directionResult) {
+function getTravellingDetails(directionResult) {
     var travellingTime = '';
+    var travellingDistance = 0;
     var travellingTime_sec = 0;
     var legs = directionResult.routes[0].legs;
     for (i = 0; i < legs.length; i++) {
         //console.log('directionResult.routes[0].legs[i].duration.value', directionResult.routes[0].legs[i].duration.value);
         travellingTime_sec += directionResult.routes[0].legs[i].duration.value;
+        travellingDistance += directionResult.routes[0].legs[i].distance.value;
     }
     //console.log('travellingTime_sec', travellingTime_sec);
     travellingTime_array = convertSecondsToHours(travellingTime_sec);
@@ -452,7 +454,9 @@ function getTravellingTime(directionResult) {
     }
     travellingTime += '' + travellingTime_array[1] + 'm';
     travellingTime += '' + travellingTime_array[2] + 's';
-    return travellingTime;
+
+    travellingDistance = travellingDistance / 1000;
+    return [travellingTime, travellingDistance]
 
 }
 
@@ -482,11 +486,11 @@ function attachInstructionText(stepDisplay, marker, text, map) {
 }
 
 function onclick_runScheduler(zee) {
-    window.open(nlapiResolveURL('SUITELET', 'customscript_sl_full_calendar', 'customdeploy_sl_full_calender') + "&zee=" + zee +'');
+    window.open(nlapiResolveURL('SUITELET', 'customscript_sl_full_calendar', 'customdeploy_sl_full_calender') + "&zee=" + zee + '');
 }
 
 function onclick_smc(zee) {
-    window.open(nlapiResolveURL('SUITELET', 'customscript_sl_smc_summary', 'customdeploy_sl_smc_summary') + "&zee=" + zee +'');
+    window.open(nlapiResolveURL('SUITELET', 'customscript_sl_smc_summary', 'customdeploy_sl_smc_summary') + "&zee=" + zee + '');
 }
 
 
@@ -664,7 +668,68 @@ function fillInAddress() {
             $('#city').val(place.address_components[i]['short_name']);
         }
     }
+
+    getTerritory(place.geometry.location.lat(), place.geometry.location.lng());
+
+
 }
+
+function getTerritory(lat, lng) {
+    console.time('getTerritory');
+
+    var territory = 'OUT OF TERRITORY';
+
+    $.getJSON("https://1048144.app.netsuite.com/core/media/media.nl?id=3772482&c=1048144&h=4579935b386159057056&_xt=.js", function(data) {
+    //$.getJSON("https://1048144-sb3.app.netsuite.com/core/media/media.nl?id=3771516&c=1048144_SB3&h=afd38c5aed85b40b9cc0&_xt=.js", function(data) {
+        console.log(data);
+        var territories = data.features;
+        console.log('territories', territories);
+        console.log('territories.length', territories.length);
+        for (k = 0; k < territories.length; k++) {
+            var polygon_array = territories[k].geometry.coordinates;
+            var polygon = [];
+            if (polygon_array.length > 1) {
+                for (i = 0; i < polygon_array.length; i++) {
+                    polygon = polygon.concat(polygon_array[i][0]);
+                }
+            } else {
+                polygon = polygon_array[0];
+            }
+            console.log('polygon' + territories[k].properties.Territory + '', polygon);
+            console.log('polygon.length' + territories[k].properties.Territory + '', polygon.length);
+            var isInTerritory = inside([lng, lat], polygon);
+            console.log('isInTerritory' + territories[k].properties.Territory + '', isInTerritory);
+            if (isInTerritory == true) {
+                territory = territories[k].properties.Territory;
+                break;
+            }
+        }
+        $('#territory').val(territory);
+        console.log('territory', territory);
+        console.timeEnd('getTerritory');
+    });
+}
+
+function inside(point, polygon) {
+    // ray-casting algorithm based on
+    // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+
+    var x = point[0],
+        y = point[1];
+    var inside = false;
+    for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        var xi = polygon[i][0],
+            yi = polygon[i][1];
+        var xj = polygon[j][0],
+            yj = polygon[j][1];
+
+        var intersect = ((yi > y) != (yj > y)) &&
+            (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+
+    return inside;
+};
 
 $(document).on('click', '#viewOnMap', function(event) {
     var position = {
