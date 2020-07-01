@@ -304,13 +304,15 @@ function summary_page(request, response) {
 
                 tab_content += '</br>';
                 tab_content += '<div class="form-group row row_time hide">';
+                //tab_content += '<div class="col-xs-1 firststop"></div>';
                 tab_content += '<div class="col-xs-3 firststop"><div class="input-group"><span class="input-group-addon">START</span><input id="firststop_' + zee_array[k] + '" class="form-control" readonly/></div></div>';
                 tab_content += '<div class="col-xs-3 laststop"><div class="input-group"><span class="input-group-addon">END</span><input id="laststop_' + zee_array[k] + '" class="form-control" readonly/></div></div>';
-                tab_content += '<div class="col-xs-4 travelling_time"><div class="input-group"><span class="input-group-addon">TRAVELLING TIME</span><input id="travelling_time_' + zee_array[k] + '" class="form-control" readonly/></div></div>';
-                tab_content += '<div class="col-xs-2 run_summary"><button type="button" class="form-control btn-xs btn-secondary run_summary" data-toggle="modal" data-target="#myModal"><span class="glyphicon glyphicon-eye-open"></span></button></div></div>';
+                tab_content += '<div class="col-xs-3 travelling_time"><div class="input-group"><span class="input-group-addon">TRAVELLING TIME</span><input id="travelling_time_' + zee_array[k] + '" class="form-control" readonly/></div></div>';
+                tab_content += '<div class="col-xs-3 travelling_distance"><div class="input-group"><span class="input-group-addon">DISTANCE</span><input id="travelling_distance_' + zee_array[k] + '" class="form-control" readonly/></div></div>';
+                /*                tab_content += '<div class="col-xs-2 run_summary"><button type="button" class="form-control btn-xs btn-secondary run_summary" data-toggle="modal" data-target="#myModal"><span class="glyphicon glyphicon-eye-open"></span></button></div></div>';*/
                 tab_content += '</div>';
 
-                //tab_content += '</div>';
+                tab_content += '</div>';
 
                 //RUN NOT SCHEDULED HTML
 
@@ -363,6 +365,10 @@ function summary_page(request, response) {
         inlineQty += '<div class="form-group row">';
         inlineQty += '<div class="col-xs-3"><div class="input-group"><span class="input-group-addon">LAT</span><input id="lat" readonly class="form-control lat" /></div></div>';
         inlineQty += '<div class="col-xs-3"><div class="input-group"><span class="input-group-addon">LNG</span><input id="lng" readonly class="form-control lng" /></div></div>';
+        inlineQty += '</div>';
+
+        inlineQty += '<div class="form-group row">';
+        inlineQty += '<div class="col-xs-4"><div class="input-group"><span class="input-group-addon">TERRITORY</span><input id="territory" readonly class="form-control territory" /></div></div>';
         inlineQty += '</div>';
 
         inlineQty += '</br>';
