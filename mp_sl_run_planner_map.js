@@ -377,7 +377,9 @@ function summary_page(request, response) {
         inlineQty += '<div class="col-xs-3"></div>';
         inlineQty += '<div class="col-xs-2"><input type="button" class="btn btn-warning" id="clearMarkers" value="CLEAR MARKERS" style="width: 100%;"/></div>';
         inlineQty += '<div class="col-xs-2"><input type="button" class="btn btn-primary" id="viewOnMap" value="VIEW ON MAP" style="width: 100%;"/></div>';
-        inlineQty += '<div class="col-xs-2"><input type="button" class="btn btn-danger" id="territoryMap" value="HIDE TERRITORY MAP" style="width: 100%;"/></div>';
+        if (role != 1000) {
+            inlineQty += '<div class="col-xs-2"><input type="button" class="btn btn-danger" id="territoryMap" value="HIDE TERRITORY MAP" style="width: 100%;"/></div>';
+        }
         inlineQty += '<div class="col-xs-2"><input type="button" class="btn btn-danger hide" id="runMarkers" value="HIDE RUN MARKERS" style="width: 100%;"/></div>';
         inlineQty += '</div>';
         inlineQty += '</div>';
