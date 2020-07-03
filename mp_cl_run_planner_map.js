@@ -47,6 +47,8 @@ var baseURL = 'https://1048144.app.netsuite.com';
 if (nlapiGetContext().getEnvironment() == "SANDBOX") {
     baseURL = 'https://1048144-sb3.app.netsuite.com';
 }
+var ctx = nlapiGetContext();
+var role = ctx.getRole();
 
 var days_of_week = [];
 days_of_week[0] = 0;
@@ -88,15 +90,18 @@ function clientPageInit(type) {
     });
     var legend = document.getElementById('legend');
     map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(legend);
-    map.data.loadGeoJson('https://1048144.app.netsuite.com/core/media/media.nl?id=3772482&c=1048144&h=4579935b386159057056&_xt=.js');
-    //map.data.loadGeoJson('https://1048144-sb3.app.netsuite.com/core/media/media.nl?id=3771516&c=1048144_SB3&h=afd38c5aed85b40b9cc0&_xt=.js');
-    map.data.addListener('mouseover', function(event) {
-        $('#zee_territory').val(event.feature.getProperty('Territory'));
-        console.log('event.feature.getProperty(Name)', event.feature.getProperty('Territory'));
-    });
-    map.data.addListener('mouseout', function(event) {
-        $('#zee_territory').val('');
-    })
+
+    if (role != 1000) {
+        map.data.loadGeoJson('https://1048144.app.netsuite.com/core/media/media.nl?id=3772482&c=1048144&h=4579935b386159057056&_xt=.js');
+        //map.data.loadGeoJson('https://1048144-sb3.app.netsuite.com/core/media/media.nl?id=3771516&c=1048144_SB3&h=afd38c5aed85b40b9cc0&_xt=.js');
+        map.data.addListener('mouseover', function(event) {
+            $('#zee_territory').val(event.feature.getProperty('Territory'));
+            console.log('event.feature.getProperty(Name)', event.feature.getProperty('Territory'));
+        });
+        map.data.addListener('mouseout', function(event) {
+            $('#zee_territory').val('');
+        });
+    }
 
     var zee_string = nlapiGetFieldValue('zee');
     //console.log('zee_string', zee_string);
@@ -680,7 +685,7 @@ function getTerritory(lat, lng) {
     var territory = 'OUT OF TERRITORY';
 
     $.getJSON("https://1048144.app.netsuite.com/core/media/media.nl?id=3772482&c=1048144&h=4579935b386159057056&_xt=.js", function(data) {
-    //$.getJSON("https://1048144-sb3.app.netsuite.com/core/media/media.nl?id=3771516&c=1048144_SB3&h=afd38c5aed85b40b9cc0&_xt=.js", function(data) {
+        //$.getJSON("https://1048144-sb3.app.netsuite.com/core/media/media.nl?id=3771516&c=1048144_SB3&h=afd38c5aed85b40b9cc0&_xt=.js", function(data) {
         console.log(data);
         var territories = data.features;
         console.log('territories', territories);
