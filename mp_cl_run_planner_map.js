@@ -91,8 +91,8 @@ function clientPageInit(type) {
     map.data.loadGeoJson('https://1048144.app.netsuite.com/core/media/media.nl?id=3772482&c=1048144&h=4579935b386159057056&_xt=.js');
     //map.data.loadGeoJson('https://1048144-sb3.app.netsuite.com/core/media/media.nl?id=3771516&c=1048144_SB3&h=afd38c5aed85b40b9cc0&_xt=.js');
     map.data.addListener('mouseover', function(event) {
-        $('#zee_territory').val(event.feature.getProperty('Name'));
-        console.log('event.feature.getProperty(Name)', event.feature.getProperty('Name'));
+        $('#zee_territory').val(event.feature.getProperty('Territory'));
+        console.log('event.feature.getProperty(Name)', event.feature.getProperty('Territory'));
     });
     map.data.addListener('mouseout', function(event) {
         $('#zee_territory').val('');
@@ -695,12 +695,12 @@ function getTerritory(lat, lng) {
             } else {
                 polygon = polygon_array[0];
             }
-            console.log('polygon' + territories[k].properties.Name + '', polygon);
-            console.log('polygon.length' + territories[k].properties.Name + '', polygon.length);
+            console.log('polygon' + territories[k].properties.Territory + '', polygon);
+            console.log('polygon.length' + territories[k].properties.Territory + '', polygon.length);
             var isInTerritory = inside([lng, lat], polygon);
-            console.log('isInTerritory' + territories[k].properties.Name + '', isInTerritory);
+            console.log('isInTerritory' + territories[k].properties.Territory + '', isInTerritory);
             if (isInTerritory == true) {
-                territory = territories[k].properties.Name;
+                territory = territories[k].properties.Territory;
                 break;
             }
         }
