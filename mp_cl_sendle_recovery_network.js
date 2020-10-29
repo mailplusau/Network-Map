@@ -94,7 +94,7 @@ function pageInit() {
 $(document).on('change', '.zee_dropdown', function(event) {
 	var zee = $(this).val();
 
-	var url = baseURL + "/app/site/hosting/scriptlet.nl?script=677&deploy=1";
+	var url = baseURL + "/app/site/hosting/scriptlet.nl?script=1065&deploy=1";
 
 	url += "&zee=" + zee + "";
 
@@ -300,8 +300,7 @@ function style(feature) {
 }
 
 function onEachFeature(feature, layer) {
-	// console.log(layer);
-	// console.log(feature);
+	console.log(layer);
 	var state_name = feature.properties.STE_NAME16;
 	var suburb = feature.properties.SSC_NAME16;
 	var zipcode = feature.properties.SSC_CODE16;
@@ -328,7 +327,7 @@ function onEachFeature(feature, layer) {
 
 		var inlineQty = '';
 		inlineQty += '<tr>';
-		inlineQty += '<td><button class="btn btn-danger btn-sm remove_class glyphicon glyphicon-trash" type="button" data-toggle="tooltip" data-placement="right" title="Delete"></button></td><td class="suburb_name">' + suburb + '</td><td class="state_name">' + state_name + '</td><td><input type="number" value="' + same_day[index] + '" class="form-control same_day_rate" pattern="^\d*(\.\d{2}$)?" /></td><td><input type="number" class="form-control next_day_rate" value="' + next_day[index] + '" pattern="^\d*(\.\d{2}$)?" /></td><input type="hidden" class="state_code" value="' + suburb + '" />';
+		inlineQty += '<td><button class="btn btn-danger btn-sm remove_class glyphicon glyphicon-trash" type="button" data-toggle="tooltip" data-placement="right" title="Delete"></button></td><td class="suburb_name">' + suburb + '</td><td class="state_name">' + state_name + '</td><td><input type="hidden" class="state_code" value="' + suburb + '" />';
 		inlineQty += '</tr>';
 		$('#network_map tr:last').after(inlineQty);
 		deleted_areas[zipcode] = layer;
@@ -375,7 +374,7 @@ function zoomToFeature(e) {
 		selected_areas[zipcode] = state_name;
 		var inlineQty = '';
 		inlineQty += '<tr>';
-		inlineQty += '<td><button class="btn btn-danger btn-sm remove_class glyphicon glyphicon-trash" type="button" data-toggle="tooltip" data-placement="right" title="Delete"></button></td><td class="suburb_name">' + suburb + '</td><td class="state_name">' + state_name + '</td><td><input type="number" class="form-control same_day_rate" pattern="^\d*(\.\d{2}$)?" /></td><td><input type="number" class="form-control next_day_rate" pattern="^\d*(\.\d{2}$)?" /></td><input type="hidden" class="state_code" value="' + suburb + '" />';
+		inlineQty += '<td><button class="btn btn-danger btn-sm remove_class glyphicon glyphicon-trash" type="button" data-toggle="tooltip" data-placement="right" title="Delete"></button></td><td class="suburb_name">' + suburb + '</td><td class="state_name">' + state_name + '</td><input type="hidden" class="state_code" value="' + suburb + '" />';
 		inlineQty += '</tr>';
 		$('#network_map tr').eq(1).after(inlineQty);
 		deleted_areas[zipcode] = layer;
@@ -441,16 +440,16 @@ function highlightFeature(e) {
 function saveRecord() {
 
 	var code_elem = document.getElementsByClassName("state_code");
-	var same_day_elem = document.getElementsByClassName("same_day_rate");
-	var next_day_elem = document.getElementsByClassName("next_day_rate");
+	// var same_day_elem = document.getElementsByClassName("same_day_rate");
+	// var next_day_elem = document.getElementsByClassName("next_day_rate");
 	var code = [];
 	var same_day_array = [];
 	var next_day_array = [];
 
 	for (var i = 0; i < code_elem.length; ++i) {
 		code[i] = code_elem[i].value;
-		same_day_array[i] = same_day_elem[i].value;
-		next_day_array[i] = next_day_elem[i].value;
+		// same_day_array[i] = same_day_elem[i].value;
+		// next_day_array[i] = next_day_elem[i].value;
 	}
 
 	var total_array = code.toString();
@@ -474,13 +473,13 @@ function saveRecord() {
 
 
 	console.log(total_array)
-	console.log(same_day_array)
-	console.log(next_day_array)
+	// console.log(same_day_array)
+	// console.log(next_day_array)
 
 
 	nlapiSetFieldValue('code_array', total_array);
-	nlapiSetFieldValue('same_day_array', same_day_array.toString());
-	nlapiSetFieldValue('next_day_array', next_day_array.toString());
+	// nlapiSetFieldValue('same_day_array', same_day_array.toString());
+	// nlapiSetFieldValue('next_day_array', next_day_array.toString());
 	// if (!isNullorEmpty(strs[1])) {
 	// 	nlapiSetFieldValue('code_array2', strs[1]);
 	// }
