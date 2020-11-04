@@ -1,15 +1,11 @@
 var ctx = nlapiGetContext();
 
-var zee = 0;
+var zee;
 var role = ctx.getRole();
 
 if (role == 1000) {
     //Franchisee
     zee = ctx.getUser();
-} else if (role == 3) { //Administrator
-    zee = 6; //test
-} else if (role == 1032) { // System Support
-    zee = 425904; //test-AR
 }
 
 function stateNames(state) {
@@ -33,18 +29,83 @@ function stateNames(state) {
     }
 }
 
+function locationIds(state) {
+    switch (state) {
+        case 'ACT':
+            return 6;
+        case 'NSW':
+            return 1;
+        case 'VIC':
+            return 3;
+        case 'QLD':
+            return 2;
+        case 'WA':
+            return 7;
+        case 'SA':
+            return 4;
+        case 'NT':
+            return 8;
+        case 'TAS':
+            return 5;
+    }
+}
+
 function sendleHubbedLocations(request, response) {
 
     if (request.getMethod() === "GET") {
 
         var form = nlapiCreateForm('My Sendle Hubbed Selections');
 
-        var inlineQty = '<meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"><script src="//code.jquery.com/jquery-1.11.0.min.js"></script><script src="//api.tiles.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.min.js"></script><link type="text/css" rel="stylesheet" href="https://cdn.datatables.net/1.10.13/css/jquery.dataTables.min.css"><link href="//netdna.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css" rel="stylesheet"><link href="https://1048144.app.netsuite.com/core/media/media.nl?id=1988776&c=1048144&h=58352d0b4544df20b40f&mv=j11m86u8&_xt=.css" rel="stylesheet"><script src="//netdna.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script><script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA92XGDo8rx11izPYT7z2L-YPMMJ6Ih1s0&libraries=places"></script></script><link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css" /><script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script><style>.info {padding: 6px 8px;font: 14px/16px Arial, Helvetica, sans-serif;background: white;background: rgba(255,255,255,0.8);box-shadow: 0 0 15px rgba(0,0,0,0.2);border-radius: 5px;}.info h5 { margin: 0 0 5px;color: #777;}.table {border-radius: 5px;width: 50%;margin: 0px auto;float: none;} #loader {position: absolute;top: 0;bottom: 0;width: 100%;background-color: rgba(245, 245, 245, 0.7);z-index: 200; }#loader img {width: 66px;height: 66px;position: absolute;top: 50%;left: 50%;margin: -33px 0 0 -33px;}</style>';
+        var primary_hubbed = null;
+        var secondary_hubbed = null;
 
-        inlineQty += '<div style=\"background-color: #cfeefc !important;border: 1px solid #e91e63;padding: 10px 10px 10px 20px;width:96%;position:absolute;font-size:12px">Click on all the Suburbs in your territory that you want to select as active for Sendle Recovery work. When you select and submit a suburb, it means you are ready to collect parcels from that suburb and lodge them daily. <br><br><b>How to use this map:</b><br>The map may take a few seconds to load as it will make all suburbs visible. To quickly get to your area either type in one of your suburbs in the upper left search box or use the map button to zoom into your area.<br><br>Click on the suburb area to select it for Sendle work. When selected, it will change to green. To unselect, click it again and the colour will change to orange. The suburb names will appear in a table below the map. Once you have finished, click the blue SUBMIT button to save your selections.<br><br>Tip: the name of the suburb will appear in the top right corner of the map when you hover your mouse over it.</div><br><br><br><br>'
+        var inlinehtml2 = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"><script src="//code.jquery.com/jquery-1.11.0.min.js"></script><link type="text/css" rel="stylesheet" href="https://cdn.datatables.net/1.10.13/css/jquery.dataTables.min.css"><link href="//netdna.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css" rel="stylesheet"><script src="//netdna.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script><link rel="stylesheet" href="https://1048144.app.netsuite.com/core/media/media.nl?id=2060796&c=1048144&h=9ee6accfd476c9cae718&_xt=.css"/><script src="https://1048144.app.netsuite.com/core/media/media.nl?id=2060797&c=1048144&h=ef2cda20731d146b5e98&_xt=.js"></script><link type="text/css" rel="stylesheet" href="https://1048144.app.netsuite.com/core/media/media.nl?id=2090583&c=1048144&h=a0ef6ac4e28f91203dfe&_xt=.css">';
+
+        inlinehtml2 += '<div class="se-pre-con"></div><div id="demo" style="background-color: #cfeefc !important;border: 1px solid #417ed9;padding: 10px 10px 10px 20px;width:96%;position:absolute" class=""><b>Purpose</b></br>Find and nominate a HUBBED location that best suits your lodgement needs (closing times, distance) and select it as your PRIMARY location to lodge Sendle Recovery parcels.</br></br><b>How to use this page</b><br>Enter a suburb name or postcode you want to find a HUBBED lodgement site for in the Search Box. Once you find the best location that works for you, click the primary circle on the right of the row to make your selection.</br></br>You can then also select multiple SECONDARY locations that will be activated for you as back-up lodgement sites.  Whenever jobs are loaded into your onfleet app, the primary HUBBED location will be used to order jobs.</br></br><b>Tips & Tricks</b></br>Keep in mind that BP and Storage sites tend to be better lodgement sites (drop and go) as staff members in these sites are used to dealing with parcel volumes compared to newsagents and chemists sites.<br>Consider nominating a site nearer your home to make it more convenient for you to finish your run. </div>';
 
 
-        inlineQty += '<div class="container" style="padding-top: 12%;"></div>';
+        // inlineHTML += '<div class="container" style="padding-top: 12%;"></div>';
+        // 
+        if (role != 1000) {
+
+            inlinehtml2 += '<div class="col-xs-4 admin_section" style="margin-top:200px;width: 20%;left: 40%;position: absolute;"><b>Select Zee</b> <select class="form-control zee_dropdown" >';
+
+            //WS Edit: Updated Search to SMC Franchisee (exc Old/Inactives)
+            //Search: SMC - Franchisees
+            var searched_zee = nlapiLoadSearch('partner', 'customsearch_smc_franchisee');
+
+            var resultSet_zee = searched_zee.runSearch();
+
+            var count_zee = 0;
+
+            var zee_id;
+
+            inlinehtml2 += '<option value=""></option>'
+
+            resultSet_zee.forEachResult(function(searchResult_zee) {
+                zee_id = searchResult_zee.getValue('internalid');
+                // WS Edit: Updated entityid to companyname
+                zee_name = searchResult_zee.getValue('companyname');
+
+                if (request.getParameter('zee') == zee_id) {
+                    inlinehtml2 += '<option value="' + zee_id + '" selected="selected">' + zee_name + '</option>';
+                } else {
+                    inlinehtml2 += '<option value="' + zee_id + '">' + zee_name + '</option>';
+                }
+
+                return true;
+            });
+
+            inlinehtml2 += '</select></div>';
+        } else {
+            inlinehtml2 += '<div class="col-xs-4 admin_section" style="margin-top:200px;width: 20%;left: 40%;position: absolute;"></div>';
+        }
+
+        if (!isNullorEmpty(request.getParameter('zee'))) {
+            zee = request.getParameter('zee');
+        }
+
+        form.addField('custpage_html2', 'inlinehtml').setPadding(1).setLayoutType('outsideabove').setDefaultValue(inlinehtml2);
 
 
         if (!isNullorEmpty(zee)) {
@@ -63,71 +124,133 @@ function sendleHubbedLocations(request, response) {
 
             var partner_name = partner_record.getFieldValue('companyname');
 
-            partner_location += ',' + partner_location2 + ',' + partner_location3;
-
             partner_state = stateNames(partner_state);
+            partner_state_id = partner_record.getFieldValue('location');
+            var primary_hubbed = partner_record.getFieldValue('custentity_sendle_hubbed_locations');
+            var secondary_hubbed = partner_record.getFieldValues('custentity_sendle_hubbed_location_sec');
+
+            nlapiLogExecution('DEBUG', 'primary_hubbed', primary_hubbed)
+            nlapiLogExecution('DEBUG', 'secondary_hubbed', secondary_hubbed)
+
+            var secondary_hubbed_string = null;
+
+            if(!isNullorEmpty(secondary_hubbed)){
+                for(var x =0; x < secondary_hubbed.length; x++){
+                    if(x == 0){
+                        secondary_hubbed_string = secondary_hubbed[x];
+                    } else {
+                        secondary_hubbed_string += ',' + secondary_hubbed[x];
+                    }
+                    
+                }
+            }
+
+            nlapiLogExecution('DEBUG', 'secondary_hubbed_string', secondary_hubbed_string)
 
             form.addField('zee', 'text', 'zee').setDisplayType('hidden').setDefaultValue(zee);
+            form.addField('primary_hubbed', 'text', 'zee').setDisplayType('hidden').setDefaultValue(primary_hubbed);
+            form.addField('secondary_hubbed', 'text', 'zee').setDisplayType('hidden').setDefaultValue(secondary_hubbed_string);
             form.addField('name', 'text', 'name').setDisplayType('hidden').setDefaultValue(partner_name);
             form.addField('partner_state', 'text', 'partner_state').setDisplayType('hidden').setDefaultValue(partner_state);
-            form.addField('partner_location', 'textarea', 'partner_location').setDisplayType('hidden').setDefaultValue(partner_main);
-           
-
-            inlineQty += '<div id="map" style="width: 1000px; height: 500px"><div id="loader"><img src="https://1048144.app.netsuite.com/core/media/media.nl?id=2089999&c=1048144&h=e0aef405c22b65dfe546" alt="loader" /></div></div>';
-            inlineQty += '</br>';
-            inlineQty += '</br>';
-            inlineQty += '</br>';
-            inlineQty += '<div class="table-responsive"><table border="0" cellpadding="10" id="network_map" cellspacing="0" class="table table-striped text-centered" style="width: 100%;"><thead style="color: white;background-color: #607799;"><tr><th><b>ACTION</b></th><th><b>NAME</b></th><th><b>ADDRESS 1</b></th><th><b>ADDRESS 2</b></th><th><b>SUBURB</b></th><th><b>STATE</b></th><th><b>POSTCODE</b></th><th><b>OPERATING HOURS</b></th></tr><tr><td colspan=7></td><td>MON</td><td>TUE</td><td>WED</td><td>THU</td><td>FRI</td></tr></thead><tbody><tr></tr>';
+            form.addField('partner_state_id', 'text', 'partner_state_id').setDisplayType('hidden').setDefaultValue(partner_record.getFieldValue('location'));
 
 
-            inlineQty += '</tbody></table></div>'
+            var inlineHTML = '';
+            inlineHTML += '</br>';
+            inlineHTML += '</br>';
+            inlineHTML += '</br>';
+            inlineHTML += '<br><br><style>table#customer {font-size:12px; font-weight:bold; border-color: #24385b;} </style><table border="0" cellpadding="15" id="customer" class="tablesorter table table-striped" cellspacing="0" style="width: 100%;"><thead style="color: white;background-color: #607799;"><tr><th  style="vertical-align: middle;text-align: center;" class="col-2"><b>NAME</b></th><th style="vertical-align: middle;text-align: center;"><b>ADDRESS 1</b></th><th style="vertical-align: middle;text-align: center;"><b>ADDRESS 2</b></th><th style="vertical-align: middle;text-align: center;"><b>SUBURB</b></th><th style="vertical-align: middle;text-align: center;"><b>STATE</b></th><th style="vertical-align: middle;text-align: center;"><b>POSTCODE</b></th><th style="vertical-align: middle;text-align: center;"><b>OPERATING HOURS<br> (MON)</b></th><th style="vertical-align: middle;text-align: center;"><b>OPERATING HOURS<br> (TUE)</b></th><th style="vertical-align: middle;text-align: center;"><b>OPERATING HOURS<br> (WED)</b></th><th style="vertical-align: middle;text-align: center;"><b>OPERATING HOURS<br> (THU)</b></th><th style="vertical-align: middle;text-align: center;"><b>OPERATING HOURS<br> (FRI)</b></th><th style="vertical-align: middle;text-align: center;"><b>PRIMARY</b></th><th style="vertical-align: middle;text-align: center;"><b>SECONDARY</b></th></tr></thead>';
 
-        } 
+            var sendleHubbedLocationsSearch = nlapiLoadSearch('customrecord_ap_lodgment_location', 'customsearch_ncl_sendle_hubbed_locations');
 
-        inlineQty += '</div>'
-        form.addField('preview_table', 'inlinehtml', '').setLayoutType('outsidebelow', 'startrow').setDefaultValue(inlineQty);
-        // form.setScript('customscript_cl_sendle_recovery_network');
+            var addFilterExpression = new nlobjSearchFilter('custrecord_ap_lodgement_site_state', null, 'anyof', partner_state_id);
+
+            sendleHubbedLocationsSearch.addFilter(addFilterExpression);
+            var resultSetSendleHubbedLocations = sendleHubbedLocationsSearch.runSearch();
+
+            resultSetSendleHubbedLocations.forEachResult(function(searchResult) {
+                var nclInternalID = searchResult.getValue("internalid");
+                var nclName = searchResult.getValue("name");
+                var nclAddress1 = searchResult.getValue("custrecord_ap_lodgement_addr1");
+                var nclAddress2 = searchResult.getValue("custrecord_ap_lodgement_addr2");
+                var nclSuburb = searchResult.getValue("custrecord_ap_lodgement_suburb");
+                var nclState = searchResult.getText("custrecord_ap_lodgement_site_state");
+                var nclPostcode = searchResult.getValue("custrecord_ap_lodgement_postcode");
+                var nclOperatingHoursMon = searchResult.getValue("custrecord_ap_lodgement_hrs_mon");
+                var nclOperatingHoursTue = searchResult.getValue("custrecord_ap_lodgement_hrs_tue");
+                var nclOperatingHoursWed = searchResult.getValue("custrecord_ap_lodgement_hrs_wed");
+                var nclOperatingHoursThu = searchResult.getValue("custrecord_ap_lodgement_hrs_thu");
+                var nclOperatingHoursFri = searchResult.getValue("custrecord_ap_lodgement_hrs_fri");
+
+
+                inlineHTML += '<tr class="dynatable-editable">';
+                inlineHTML += '<td>' + nclName + '</td>';
+                inlineHTML += '<td>' + nclAddress1 + '</td>';
+                inlineHTML += '<td>' + nclAddress2 + '</td>';
+                inlineHTML += '<td>' + nclSuburb + '</td>';
+                inlineHTML += '<td>' + nclState + '</td>';
+                inlineHTML += '<td>' + nclPostcode + '</td>';
+                inlineHTML += '<td>' + nclOperatingHoursMon + '</td>';
+                inlineHTML += '<td>' + nclOperatingHoursTue + '</td>';
+                inlineHTML += '<td>' + nclOperatingHoursWed + '</td>';
+                inlineHTML += '<td>' + nclOperatingHoursThu + '</td>';
+                inlineHTML += '<td>' + nclOperatingHoursFri + '</td>';
+                if (primary_hubbed == nclInternalID) {
+                    inlineHTML += '<td style="vertical-align: middle;text-align: center;"><div class="custom-control custom-checkbox"><input type="radio" class="custom-control-input primary" id="" name="primary" data-nclInternalID="' + nclInternalID + '" checked/></div></td>';
+                } else {
+                    inlineHTML += '<td style="vertical-align: middle;text-align: center;"><div class="custom-control custom-checkbox"><input type="radio" class="custom-control-input primary" id="" name="primary" data-nclInternalID="' + nclInternalID + '"/></div></td>';
+                }
+
+                var pos = secondary_hubbed.indexOf(nclInternalID);
+
+                if (pos != -1) {
+                    inlineHTML += '<td style="vertical-align: middle;text-align: center;"><div class="custom-control custom-checkbox"><input type="checkbox" class="custom-control-input secondary" id="" name="secondary" data-nclInternalID="' + nclInternalID + '" checked/></div></td>';
+                } else {
+                    inlineHTML += '<td style="vertical-align: middle;text-align: center;"><div class="custom-control custom-checkbox"><input type="checkbox" class="custom-control-input secondary" id="" name="secondary" data-nclInternalID="' + nclInternalID + '"/></div></td>';
+                }
+
+
+
+                inlineHTML += '</tr>';
+
+
+                return true;
+            });
+
+
+            inlineHTML += '</tbody></table>'
+
+        }
+
+        inlineHTML += '</div>'
+        form.addField('preview_table', 'inlinehtml', '').setLayoutType('outsidebelow', 'startrow').setDefaultValue(inlineHTML);
+        form.setScript('customscript_cl_sendle_hubbed_locations');
 
         form.addSubmitButton('Submit');
 
         response.writePage(form);
     } else {
         var zee2 = request.getParameter('zee');
-        var code_array = request.getParameter('code_array');
-        // var same_day_array = request.getParameter('same_day_array');
-        // var next_day_array = request.getParameter('next_day_array');
+        var primary_hubbed = request.getParameter('primary_hubbed');
+        var secondary_hubbed = request.getParameter('secondary_hubbed');
 
-        code_array = code_array.split(',');
-        // same_day_array = same_day_array.split(',');
-        // next_day_array = next_day_array.split(',');
+        nlapiLogExecution('DEBUG', 'secondary_hubbed', secondary_hubbed)
 
-        var network_JSON = '['
+        secondary_hubbed = secondary_hubbed.split(',');
 
-        for (var x = 0; x < code_array.length; x++) {
-
-            network_JSON += '{"suburbs" : "' + code_array[x] + '"},';
-            // network_JSON += '"same_day" : "' + same_day_array[x] + '",'
-            // network_JSON += '"next_day" : "' + next_day_array[x] + '"},'
-        }
-
-        network_JSON = network_JSON.substring(0, network_JSON.length - 1);
-
-        network_JSON += ']';
 
         var partner_record = nlapiLoadRecord('partner', parseInt(zee2));
 
-        partner_record.setFieldValue('custentity_sendle_recovery_suburbs_main', code_array);
-        partner_record.setFieldValue('custentity_sendle_recovery_suburbs', network_JSON);
+        partner_record.setFieldValue('custentity_sendle_hubbed_locations', primary_hubbed);
+        partner_record.setFieldValues('custentity_sendle_hubbed_location_sec', secondary_hubbed);
 
         nlapiSubmitRecord(partner_record);
 
         var params = {};
 
-        if (role == 1000) {
-            nlapiSetRedirectURL('TASKLINK', 'CARD_-29');
-        } else {
-            nlapiSetRedirectURL('SUITELET', 'customscript_sl_sendle_recovery_network', 'customdeploy_sl_sendle_recovery_network', null, params);
-        }
+
+        nlapiSetRedirectURL('SUITELET', 'customscript_sl_sendle_hubbed_locations', 'customdeploy_sl_sendle_hubbed_locations', null, params);
+
 
 
     }
