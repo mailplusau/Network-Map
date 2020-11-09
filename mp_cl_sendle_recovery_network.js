@@ -327,7 +327,7 @@ function onEachFeature(feature, layer) {
 
 		var inlineQty = '';
 		inlineQty += '<tr>';
-		inlineQty += '<td><button class="btn btn-danger btn-sm remove_class glyphicon glyphicon-trash" type="button" data-toggle="tooltip" data-placement="right" title="Delete"></button></td><td class="suburb_name">' + suburb + '</td><td class="state_name">' + state_name + '</td><td><input type="hidden" class="state_code" value="' + suburb + '" />';
+		inlineQty += '<td><button class="btn btn-danger btn-sm remove_class glyphicon glyphicon-trash" type="button" data-toggle="tooltip" data-placement="right" title="Delete"></button></td><td class="suburb_name">' + suburb + '</td><td class="state_name">' + state_name + '</td><input type="hidden" class="state_code" value="' + suburb + '" />';
 		inlineQty += '</tr>';
 		$('#network_map tr:last').after(inlineQty);
 		deleted_areas[zipcode] = layer;

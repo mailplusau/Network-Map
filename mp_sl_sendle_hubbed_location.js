@@ -134,14 +134,14 @@ function sendleHubbedLocations(request, response) {
 
             var secondary_hubbed_string = null;
 
-            if(!isNullorEmpty(secondary_hubbed)){
-                for(var x =0; x < secondary_hubbed.length; x++){
-                    if(x == 0){
+            if (!isNullorEmpty(secondary_hubbed)) {
+                for (var x = 0; x < secondary_hubbed.length; x++) {
+                    if (x == 0) {
                         secondary_hubbed_string = secondary_hubbed[x];
                     } else {
                         secondary_hubbed_string += ',' + secondary_hubbed[x];
                     }
-                    
+
                 }
             }
 
@@ -201,7 +201,10 @@ function sendleHubbedLocations(request, response) {
                     inlineHTML += '<td style="vertical-align: middle;text-align: center;"><div class="custom-control custom-checkbox"><input type="radio" class="custom-control-input primary" id="" name="primary" data-nclInternalID="' + nclInternalID + '"/></div></td>';
                 }
 
-                var pos = secondary_hubbed.indexOf(nclInternalID);
+                 var pos = -1;
+                if(!isNullorEmpty(secondary_hubbed)) {
+                    pos = secondary_hubbed.indexOf(nclInternalID);
+                }
 
                 if (pos != -1) {
                     inlineHTML += '<td style="vertical-align: middle;text-align: center;"><div class="custom-control custom-checkbox"><input type="checkbox" class="custom-control-input secondary" id="" name="secondary" data-nclInternalID="' + nclInternalID + '" checked/></div></td>';
