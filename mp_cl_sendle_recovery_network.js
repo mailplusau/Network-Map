@@ -317,6 +317,8 @@ function onEachFeature(feature, layer) {
 			fillColor: '#5cb85c'
 		});
 
+		console.log(layer)
+
 		count++;
 		if (count == 1) {
 			map.fitBounds(layer.getBounds());
@@ -369,6 +371,8 @@ function zoomToFeature(e) {
 	var state_name = layer.feature.properties.STE_NAME16;
 	var suburb = layer.feature.properties.SSC_NAME16;
 	var zipcode = layer.feature.properties.SSC_CODE16;
+
+	console.log(layer);
 
 	if (isNullorEmpty(selected_areas[zipcode])) {
 		selected_areas[zipcode] = state_name;
