@@ -3,7 +3,7 @@
  * @Date:   2021-12-02T13:00:48+11:00
  * @Filename: mp_cl_lastmile_suburb_selection.js
  * @Last modified by:   ankithravindran
- * @Last modified time: 2021-12-02T15:46:15+11:00
+ * @Last modified time: 2022-01-13T13:04:22+11:00
  */
 
 
@@ -35,35 +35,37 @@ var partner_location;
 var same_day;
 var next_day;
 
+var finalDeletedAreas = []
+var intitalLocation = [];
+
 var baseURL = 'https://1048144.app.netsuite.com';
 if (nlapiGetContext().getEnvironment() == "SANDBOX") {
 	baseURL = 'https://system.sandbox.netsuite.com';
 }
 
 function afterLoad() {
-      $(".se-pre-con").fadeOut("slow");
-    }
+	$(".se-pre-con").fadeOut("slow");
+}
 
 
 function pageInit() {
 
 	$("#NS_MENU_ID0-item0").css("background-color", "#CFE0CE");
-		$("#NS_MENU_ID0-item0 a").css("background-color", "#CFE0CE");
-		$("#body").css("background-color", "#CFE0CE");
+	$("#NS_MENU_ID0-item0 a").css("background-color", "#CFE0CE");
+	$("#body").css("background-color", "#CFE0CE");
 
 	partner_state = (nlapiGetFieldValue('partner_state'));
 	var codes = (nlapiGetFieldValue('partner_location'));
 
 	same_day = nlapiGetFieldValue('same_day');
 	next_day = nlapiGetFieldValue('next_day');
-	if(!isNullorEmpty(same_day)){
+	if (!isNullorEmpty(same_day)) {
 		same_day = same_day.split(',');
 	}
 
-	if(!isNullorEmpty(next_day)){
+	if (!isNullorEmpty(next_day)) {
 		next_day = next_day.split(',');
 	}
-
 
 
 
@@ -92,19 +94,21 @@ function pageInit() {
 
 	// omnivore.kml('https://1048144.app.netsuite.com/core/media/media.nl?id=1318421&c=1048144&h=4fc1e382ffe48f5cde34&mv=ibvx69x4&_xt=.txt&whence=', null, customLayer).addTo(map);
 
-	$.getJSON("https://1048144.app.netsuite.com/core/media/media.nl?id=2080754&c=1048144&h=a14f4ecbf9986cff6fb1&_xt=.js", function(data) {
+	$.getJSON(
+		"https://1048144.app.netsuite.com/core/media/media.nl?id=2080754&c=1048144&h=a14f4ecbf9986cff6fb1&_xt=.js",
+		function(data) {
 
-		console.log(data)
+			console.log(data)
 
-		// add GeoJSON layer to the map once the file is loaded
-		geojson2 = L.geoJson(data, {
-			style: style2,
-			// filter: layerFilter2,
-			onEachFeature: onEachFeature
+			// add GeoJSON layer to the map once the file is loaded
+			geojson2 = L.geoJson(data, {
+				style: style2,
+				// filter: layerFilter2,
+				onEachFeature: onEachFeature
+			});
+			// afterLoad();
+			ready(data);
 		});
-		// afterLoad();
-		ready(data);
-	});
 
 
 }
@@ -125,10 +129,11 @@ function ready(data) {
 	$('#loader').remove();
 
 	// map = L.map('map').setView([-27.833, 133.583], 4);
-	L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
-		attribution: '� OpenStreetMap',
-		id: 'mapbox.light'
-	}).addTo(map);
+	L.tileLayer(
+		'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
+			attribution: '� OpenStreetMap',
+			id: 'mapbox.light'
+		}).addTo(map);
 
 
 
@@ -169,7 +174,8 @@ function ready(data) {
 
 			// Create a marker for each place.
 			console.log(places);
-			console.log(place.geometry.location.lat() + " / " + place.geometry.location.lng());
+			console.log(place.geometry.location.lat() + " / " + place.geometry.location
+				.lng());
 			var marker = L.marker([
 				place.geometry.location.lat(),
 				place.geometry.location.lng()
@@ -350,7 +356,10 @@ function onEachFeature(feature, layer) {
 
 		var inlineQty = '';
 		inlineQty += '<tr>';
-		inlineQty += '<td><button class="btn btn-danger btn-sm remove_class glyphicon glyphicon-trash" type="button" data-toggle="tooltip" data-placement="right" title="Delete"></button></td><td class="suburb_name">' + suburb + '</td><td class="state_name">' + state_name + '</td><input type="hidden" class="state_code" value="' + suburb + '" />';
+		inlineQty +=
+			'<td><button class="btn btn-danger btn-sm remove_class glyphicon glyphicon-trash" type="button" data-toggle="tooltip" data-placement="right" title="Delete"></button></td><td class="suburb_name">' +
+			suburb + '</td><td class="state_name">' + state_name +
+			'</td><input type="hidden" class="state_code" value="' + suburb + '" />';
 		inlineQty += '</tr>';
 		$('#network_map tr:last').after(inlineQty);
 		deleted_areas[zipcode] = layer;
@@ -399,7 +408,10 @@ function zoomToFeature(e) {
 		selected_areas[zipcode] = state_name;
 		var inlineQty = '';
 		inlineQty += '<tr>';
-		inlineQty += '<td><button class="btn btn-danger btn-sm remove_class glyphicon glyphicon-trash" type="button" data-toggle="tooltip" data-placement="right" title="Delete"></button></td><td class="suburb_name">' + suburb + '</td><td class="state_name">' + state_name + '</td><input type="hidden" class="state_code" value="' + suburb + '" />';
+		inlineQty +=
+			'<td><button class="btn btn-danger btn-sm remove_class glyphicon glyphicon-trash" type="button" data-toggle="tooltip" data-placement="right" title="Delete"></button></td><td class="suburb_name">' +
+			suburb + '</td><td class="state_name">' + state_name +
+			'</td><input type="hidden" class="state_code" value="' + suburb + '" />';
 		inlineQty += '</tr>';
 		$('#network_map tr').eq(1).after(inlineQty);
 		deleted_areas[zipcode] = layer;
@@ -409,6 +421,7 @@ function zoomToFeature(e) {
 			return $.trim($(this).find('td').eq(1).text()) == suburb
 		}).remove();
 		delete selected_areas[zipcode];
+		finalDeletedAreas[finalDeletedAreas.length] = suburb
 	}
 }
 
@@ -421,6 +434,7 @@ $(document).on('click', '.remove_class', function(event) {
 
 	if (!isNullorEmpty(selected_areas[zipcode])) {
 		delete selected_areas[zipcode];
+		finalDeletedAreas[finalDeletedAreas.length] = zipcode
 		geojson2.resetStyle(deleted_areas[zipcode]);
 	}
 });
@@ -470,12 +484,40 @@ function saveRecord() {
 	var code = [];
 	var same_day_array = [];
 	var next_day_array = [];
+	var deletes_suburbs = []
+
+	var newSuburbsAdded = [];
 
 	for (var i = 0; i < code_elem.length; ++i) {
 		code[i] = code_elem[i].value;
 		// same_day_array[i] = same_day_elem[i].value;
 		// next_day_array[i] = next_day_elem[i].value;
+		if (intitalLocation.indexOf(code_elem[i].value) === -1) {
+			newSuburbsAdded[newSuburbsAdded.length] = code_elem[i].value;
+		}
 	}
+
+	console.log('intitalLocation: ' + intitalLocation);
+	console.log('finalDeletedAreas: ' + finalDeletedAreas);
+	console.log('newSuburbsAdded: ' + newSuburbsAdded);
+	console.log('On save Locations: ' + code);
+
+	finalDeletedAreas = finalDeletedAreas.filter(function(item, pos) {
+		return finalDeletedAreas.indexOf(item) == pos;
+	});
+
+
+	console.log('finalDeletedAreas: ' + finalDeletedAreas);
+
+	var message = "Last-Mile suburb selections change:</br></br>";
+	message += "<b>Deleted Suburbs</b>: " + finalDeletedAreas + "</br>";
+	message += "<b>New Suburbs</b>: " + newSuburbsAdded + "</br>";
+
+
+	nlapiSendEmail(409635, ['fiona.harrison@mailplus.com.au'],
+		'Last-Mile Suburb Addition/Removal - ' + nlapiGetFieldValue('name'),
+		message, ['ankith.ravindran@mailplus.com.au', 'claude.busse@mailplus.com.au']
+	)
 
 	var total_array = code.toString();
 
@@ -498,8 +540,8 @@ function saveRecord() {
 
 
 	console.log(total_array)
-	// console.log(same_day_array)
-	// console.log(next_day_array)
+		// console.log(same_day_array)
+		// console.log(next_day_array)
 
 
 	nlapiSetFieldValue('code_array', total_array);
