@@ -3,7 +3,7 @@
  * @Date:   2021-09-15T17:00:14+10:00
  * @Filename: mp_cl_sendleplus_suburb_selection.js
  * @Last modified by:   ankithravindran
- * @Last modified time: 2021-12-02T13:24:16+11:00
+ * @Last modified time: 2022-01-13T09:57:36+11:00
  */
 
 
@@ -28,10 +28,13 @@ var stateLG = [];
 var selected_areas = [];
 var deleted_areas = [];
 
+var finalDeletedAreas = []
+
 var basemapsObj = {};
 
 var partner_state;
 var partner_location;
+var intitalLocation = [];
 var same_day;
 var next_day;
 
@@ -63,7 +66,7 @@ function pageInit() {
 
 
 	if (!isNullorEmpty(codes)) {
-
+		intitalLocation = codes;
 		partner_location = codes.split(',');
 	}
 	console.log(partner_location);
@@ -414,6 +417,7 @@ function zoomToFeature(e) {
 			return $.trim($(this).find('td').eq(1).text()) == suburb
 		}).remove();
 		delete selected_areas[zipcode];
+		finalDeletedAreas[finalDeletedAreas.length] = suburb
 	}
 }
 
@@ -426,6 +430,7 @@ $(document).on('click', '.remove_class', function(event) {
 
 	if (!isNullorEmpty(selected_areas[zipcode])) {
 		delete selected_areas[zipcode];
+		finalDeletedAreas[finalDeletedAreas.length] = zipcode
 		geojson2.resetStyle(deleted_areas[zipcode]);
 	}
 });
@@ -475,12 +480,43 @@ function saveRecord() {
 	var code = [];
 	var same_day_array = [];
 	var next_day_array = [];
+	var deletes_suburbs = []
+
+	var newSuburbsAdded = [];
 
 	for (var i = 0; i < code_elem.length; ++i) {
+		console.log(code_elem[i].value)
 		code[i] = code_elem[i].value;
 		// same_day_array[i] = same_day_elem[i].value;
 		// next_day_array[i] = next_day_elem[i].value;
-	}
+		if (intitalLocation.indexOf(code_elem[i].value) === -1) {
+			newSuburbsAdded[newSuburbsAdded.length] = code_elem[i].value;
+		}
+	};
+
+
+
+	console.log('intitalLocation: ' + intitalLocation);
+	console.log('finalDeletedAreas: ' + finalDeletedAreas);
+	console.log('newSuburbsAdded: ' + newSuburbsAdded);
+	console.log('On save Locations: ' + code);
+
+	finalDeletedAreas = finalDeletedAreas.filter(function(item, pos) {
+		return finalDeletedAreas.indexOf(item) == pos;
+	});
+
+
+	console.log('finalDeletedAreas: ' + finalDeletedAreas);
+
+	var message = "First-Mile suburb selections change:</br></br>";
+	message += "<b>Deleted Suburbs</b>: " + finalDeletedAreas + "</br>";
+	message += "<b>New Suburbs</b>: " + newSuburbsAdded + "</br>";
+
+
+	nlapiSendEmail(409635, ['fiona.harrison@mailplus.com.au'],
+		'First-Mile Suburb Addition/Removal - ' + nlapiGetFieldValue('name'),
+		message, ['ankith.ravindran@mailplus.com.au', 'claude.busse@mailplus.com.au']
+	)
 
 	var total_array = code.toString();
 
@@ -502,9 +538,9 @@ function saveRecord() {
 	// console.log(strs);
 
 
-	console.log(total_array)
-		// console.log(same_day_array)
-		// console.log(next_day_array)
+	// console.log(total_array)
+	// console.log(same_day_array)
+	// console.log(next_day_array)
 
 
 	nlapiSetFieldValue('code_array', total_array);

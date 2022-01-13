@@ -3,7 +3,7 @@
  * @Date:   2021-09-15T17:00:14+10:00
  * @Filename: mp_sl_sendleplus_suburb_selection.js
  * @Last modified by:   ankithravindran
- * @Last modified time: 2021-12-03T09:44:04+11:00
+ * @Last modified time: 2022-01-13T09:05:58+11:00
  */
 
 
@@ -105,7 +105,7 @@ function summary_page(request, response) {
 
       inlineQty += '</select></div></div></div>';
     } else {
-      inlineQty += '<div class="container" style="padding-top: 12%;"></div>';
+      inlineQty += '<div class="container" style="padding-top: 35%;"></div>';
     }
 
     if (!isNullorEmpty(zee)) {

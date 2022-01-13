@@ -2,7 +2,7 @@
  * @Author: Ankith Ravindran <ankithravindran>
  * @Date:   2021-12-02T13:00:34+11:00
  * @Last modified by:   ankithravindran
- * @Last modified time: 2021-12-03T09:48:16+11:00
+ * @Last modified time: 2022-01-13T09:06:00+11:00
  */
 
 
@@ -98,7 +98,7 @@ function main(request, response) {
 
       inlineHtml += '</select></div></div></div>';
     } else {
-      inlineHtml += '<div class="" style="padding-top: 12%;"></div>';
+      inlineHtml += '<div class="" style="padding-top: 35%;"></div>';
     }
 
     if (!isNullorEmpty(zee)) {
