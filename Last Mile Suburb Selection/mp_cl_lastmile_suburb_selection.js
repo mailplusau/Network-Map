@@ -38,6 +38,10 @@ var next_day;
 var finalDeletedAreas = []
 var intitalLocation = [];
 
+// Suburb & Operator Mapping (Originally opsync)
+var op_sync = nlapiGetFieldValue('opsync');
+var mappingSaveArray = [];
+
 var baseURL = 'https://1048144.app.netsuite.com';
 if (nlapiGetContext().getEnvironment() == "SANDBOX") {
 	baseURL = 'https://system.sandbox.netsuite.com';
@@ -415,6 +419,11 @@ function zoomToFeature(e) {
 		inlineQty += '</tr>';
 		$('#network_map tr').eq(1).after(inlineQty);
 		deleted_areas[zipcode] = layer;
+
+		if (mappingSaveArray.indexOf(suburb) != -1) {
+			var indexOfArray = mappingSaveArray.indexOf(suburb);
+			mappingSaveArray.splice(indexOfArray, 1)
+		}
 	} else {
 		geojson2.resetStyle(e.target);
 		var $rowsNo = $('#network_map tbody tr').filter(function() {
@@ -422,7 +431,12 @@ function zoomToFeature(e) {
 		}).remove();
 		delete selected_areas[zipcode];
 		finalDeletedAreas[finalDeletedAreas.length] = suburb
+
+		if (mappingSaveArray.indexOf(suburb) == -1) {
+			mappingSaveArray.push(suburb);
+		}
 	}
+	console.log('Deleted Array (Click): ' + mappingSaveArray);
 }
 
 $(document).on('click', '.remove_class', function(event) {
@@ -437,6 +451,10 @@ $(document).on('click', '.remove_class', function(event) {
 		finalDeletedAreas[finalDeletedAreas.length] = zipcode
 		geojson2.resetStyle(deleted_areas[zipcode]);
 	}
+	if (mappingSaveArray.indexOf(zipcode) == -1) {
+		mappingSaveArray.push(zipcode);
+	}
+	console.log('Deleted Array (Remove): ' + mappingSaveArray);
 });
 
 
@@ -553,6 +571,20 @@ function saveRecord() {
 	// if (!isNullorEmpty(strs[2])) {
 	// 	nlapiSetFieldValue('code_array3', strs[2]);
 	// }
+
+	if (op_sync == 'true') {
+		var suburbList = [];
+		console.log('Save Array List: ' + mappingSaveArray);
+		mappingSaveArray.forEach(function (suburb) { // ZetLand (NSW)
+			if (suburb.includes(' (')) {
+				suburbList.push(suburb.split(' (')[0]); // If String Contains (SA) etc, remove it. 
+			} else {
+				suburbList.push(suburb);
+			}
+		});
+
+		nlapiSetFieldValue('deleted_array', suburbList);
+	}
 
 	return true;
 

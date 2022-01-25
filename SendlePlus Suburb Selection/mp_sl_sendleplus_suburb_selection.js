@@ -85,7 +85,7 @@ function summary_page(request, response) {
 
       inlineQty += '<option value=""></option>'
 
-      resultSet_zee.forEachResult(function(searchResult_zee) {
+      resultSet_zee.forEachResult(function (searchResult_zee) {
 
         zeeid = searchResult_zee.getValue('internalid');
         zee_name = searchResult_zee.getValue('entityid');
@@ -179,6 +179,10 @@ function summary_page(request, response) {
       form.addField('next_day_array', 'textarea', 'code_array').setDisplayType(
         'hidden');
 
+      var op_sync = request.getParameter('opsync');
+      form.addField('opsync', 'text', 'opsync').setDisplayType('hidden').setDefaultValue(op_sync);
+      form.addField('deleted_array', 'textarea', 'deleted_array').setDisplayType('hidden')
+
       inlineQty +=
         '<div id="map" style="width: 1000px; height: 500px"><div id="loader"><img src="https://1048144.app.netsuite.com/core/media/media.nl?id=2089999&c=1048144&h=e0aef405c22b65dfe546" alt="loader" /></div></div>';
       inlineQty += '</br>';
@@ -247,13 +251,130 @@ function summary_page(request, response) {
 
     var params = {};
 
-    if (role == 1000) {
-      nlapiSetRedirectURL('TASKLINK', 'CARD_-29');
-    } else {
-      nlapiSetRedirectURL('SUITELET', 'customscript_sl_sendle_recovery_network',
-        'customdeploy_sl_sendle_recovery_network', null, params);
+    /**
+        *  SendlePlus - Operator Sync Page
+        */
+    var op_sync = request.getParameter('opsync');
+    var state = request.getParameter('partner_state');
+    var partner_state = '';
+    switch (state) {
+      case 'Australian Capital Territory':
+        partner_state = 'ACT'
+        break;
+      case 'New South Wales':
+        partner_state = 'NSW';
+        break;
+      case 'Victoria':
+        partner_state = 'VIC';
+        break;
+      case 'Queensland':
+        partner_state = 'QLD';
+        break;
+      case 'Western Australia':
+        partner_state = 'WA';
+        break;
+      case 'South Australia':
+        partner_state = 'SA';
+        break;
+      case 'Northern Territory':
+        partner_state = 'NT';
+        break;
+      case 'Tasmania':
+        partner_state = 'TAS';
+        break;
     }
+    var partner_name = request.getParameter('name');
+    var deleted_array = request.getParameter('deleted_array');
+    nlapiLogExecution('DEBUG', 'deleted Array', deleted_array);
 
+    if (op_sync == 'true') {
+      var op_sync_params = {
+        zeeid: zee2,
+        zeename: partner_name,
+        zeestate: partner_state,
+      }
+      // op_sync_params = '&custparam_params=' + JSON.stringify(op_sync_params);
+      nlapiLogExecution('DEBUG', 'Operator Sync Redirect Params', JSON.stringify(op_sync_params));
+      nlapiSetRedirectURL('SUITELET', 'customscript_sl_sendleplus_operator', 'customdeploy_sl_sendleplus_operator', null, op_sync_params);
+
+      if (!isNullorEmpty(deleted_array)) {
+        suburbList = JSON.parse(JSON.stringify(deleted_array));
+        suburbList = suburbList.split(',');
+        nlapiLogExecution('DEBUG', 'deleted Array: Split', suburbList);
+
+        if (suburbList.length > 0) {
+          var suburbFilter = new Array();
+          for (var x = 0; x < suburbList.length; x++) {
+            nlapiLogExecution('DEBUG', 'deleted Array: EACH', suburbList[x]);
+            suburbFilter.push(['custrecord_sendleplus_sub_name', 'contains', suburbList[x]]);
+            // suburbFilter[x] = new nlobjSearchFilter('custrecord_sendleplus_sub_name', null, 'contains', suburbList[x]).setOr(true);
+            suburbFilter.push('OR');
+          }
+          suburbFilter.pop();
+
+          var filters = [];
+          filters.push(['custrecord_sendleplus_state', 'is', partner_state], 'AND');
+          filters.push(suburbFilter);
+          var columns = new Array();
+          columns[0] = new nlobjSearchColumn("name"),
+          columns[1] = new nlobjSearchColumn("internalid"),
+          columns[2] = new nlobjSearchColumn("externalid"),
+          columns[3] = new nlobjSearchColumn("custrecord_sendleplus_sub_code"),
+          columns[4] = new nlobjSearchColumn("custrecord_sendleplus_sub_name").setSort(false),
+          columns[5] = new nlobjSearchColumn("custrecord_sendleplus_state"),
+          columns[6] = new nlobjSearchColumn("custrecord_sendleplus_postcode"),
+          columns[7] = new nlobjSearchColumn("custrecord_sendleplus_zee"),
+          columns[8] = new nlobjSearchColumn("custrecord_sendleplus_prim_email"),
+          columns[9] = new nlobjSearchColumn("custrecord_sendleplus_prim_id"),
+          columns[10] = new nlobjSearchColumn("custrecord_sendleplus_prim_name"),
+          columns[11] = new nlobjSearchColumn("custrecord_sendleplus_prim_phone_num"),
+          columns[12] = new nlobjSearchColumn("custrecord_sendleplus_sec_json"),
+          columns[13] = new nlobjSearchColumn("custrecord_sendleplus_mile"),
+          columns[14] = new nlobjSearchColumn("custrecord_sendleplus_sa3_code"),
+          columns[15] = new nlobjSearchColumn("custrecord_sendleplus_sa3_name"),
+          columns[16] = new nlobjSearchColumn("custrecord_sendleplus_sa4_code"),
+          columns[17] = new nlobjSearchColumn("custrecord_sendleplus_sa4_name")
+
+          nlapiLogExecution('DEBUG', 'Mapping List: To Delete', JSON.stringify(filters));
+
+          var mapping_list_search = nlapiSearchRecord('customrecord_sendleplus_mapping_list', 'customsearch_sendleplus_mapping_search', filters, columns);
+          // mapping_list_search.addFilter(new nlobjSearchFilter('custrecord_sendleplus_state', null, 'is', partner_state))//.setOr(false););
+          // mapping_list_search.addFilters(suburbFilter);
+          nlapiLogExecution('DEBUG', 'Mapping List: To Delete', JSON.stringify(mapping_list_search));
+          // var mapping_results = mapping_list_search.runSearch();
+          // nlapiLogExecution('DEBUG', 'Mapping List: Array', JSON.stringify(mapping_results));
+
+          // mapping_results.forEachResult(function (res) {
+          for (var i = 0; mapping_list_search != null && i < mapping_list_search.length; i++){
+            var res = mapping_list_search[i];
+
+            var rec_id = res.getValue('internalid');
+            nlapiLogExecution('DEBUG', 'internalid', rec_id);
+
+            var rec = nlapiLoadRecord('customrecord_sendleplus_mapping_list', rec_id);
+            rec.setFieldValue('custrecord_sendleplus_prim_email', null)
+            rec.setFieldValue('custrecord_sendleplus_prim_id', null)
+            rec.setFieldValue('custrecord_sendleplus_prim_name', null)
+            rec.setFieldValue('custrecord_sendleplus_prim_phone_num', null)
+            rec.setFieldValue('custrecord_sendleplus_sec_json', null)
+            rec.setFieldValue('custrecord_sendleplus_mile', null);
+            nlapiSubmitRecord(rec);
+
+            nlapiLogExecution('DEBUG', 'Mapping List: Save Record', rec);
+            return true;
+          }
+          // });
+
+        }
+      }
+    } else {
+      if (role == 1000) {
+        nlapiSetRedirectURL('TASKLINK', 'CARD_-29');
+      } else {
+        nlapiSetRedirectURL('SUITELET', 'customscript_sl_sendle_recovery_network',
+          'customdeploy_sl_sendle_recovery_network', null, params);
+      }
+    }
 
   }
 
