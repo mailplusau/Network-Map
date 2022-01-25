@@ -355,6 +355,7 @@ function main(request, response) {
             rec.setFieldValue('custrecord_sendleplus_prim_phone_num', null)
             rec.setFieldValue('custrecord_sendleplus_sec_json', null)
             rec.setFieldValue('custrecord_sendleplus_mile', null);
+            rec.setFieldValue('custrecord_sendleplus_zee', null);
             nlapiSubmitRecord(rec);
 
             nlapiLogExecution('DEBUG', 'Mapping List: Save Record', rec);
