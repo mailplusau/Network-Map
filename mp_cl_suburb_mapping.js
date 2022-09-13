@@ -14,16 +14,14 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
     if (runtime.EnvType == "SANDBOX") {
         baseURL = 'https://1048144-sb3.app.netsuite.com';
     }
-    // var role = runtime.getCurrentUser().role;
-
     var ctx = runtime.getCurrentScript();
     var currRec = currentRecord.get();
 
-    var dataSet = [];
+    var role = runtime.getCurrentUser().role;
+
     var dataSet2 = [];
     var dataSet3 = [];
 
-    var baseDataSet2 = [];
     var dataMatchSet = [];
 
     var operatorSet = [];
@@ -31,8 +29,7 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
 
     var suburbSet = [];
     var suburbList = [];
-
-    var toSaveSet = [];
+    var suburbListState = [];
 
     var change = false;
 
@@ -43,7 +40,8 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
     var zee_state_postcode = ['', 2, 4, 3, 5, 7, 2, 6, 0]
     var zee_state_id = zee_state_array.indexOf(zee_state);
     var zee_postcode = zee_state_postcode[zee_state_id];
-    var page_index = 0;
+    var zee_postcode_low = parseInt(zee_postcode + '000');
+    var zee_postcode_high = parseInt((zee_postcode+1) + '000');
 
     /** Update */
     var selector = currRec.getValue({ fieldId: 'custpage_suburb_mapping_selector' });
@@ -52,6 +50,26 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
      * On page initialisation
      */
     function pageInit(scriptContext) {
+        if (role == 1000) {
+            $('.zeeDropdown').hide();
+            if (isNullorEmpty(zee_id)){
+                //Franchisee
+                var zee = runtime.getCurrentUser().id;
+                var zeeRecord = record.load({ type: 'partner', id: zee });
+                var zee_name_dropdown = zeeRecord.getValue('entityid') // 
+                var zee_state_dropdown = zeeRecord.getValue('billstate');
+                var params = {
+                    zeeid: zee,
+                    zeename: zee_name_dropdown,
+                    zeestate: zee_state_dropdown,
+                }
+                params = JSON.stringify(params);
+                var upload_url = baseURL + url.resolveScript({ deploymentId: 'customdeploy_sl_suburb_mapping', scriptId: 'customscript_sl_suburb_mapping' }) + '&custparam_params=' + params;
+                currRec.setValue({ fieldId: 'custpage_suburb_mapping_zee_id', value: zee });
+                window.location.href = upload_url;
+            }
+        }
+
         // Background-Colors
         $("#NS_MENU_ID0-item0").css("background-color", "#CFE0CE");
         $("#NS_MENU_ID0-item0 a").css("background-color", "#CFE0CE");
@@ -76,7 +94,6 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                 zeeid: zee_id_dropdown,
                 zeename: zee_name_dropdown,
                 zeestate: zee_state_dropdown,
-                // pagenum: 0
             }
             params = JSON.stringify(params);
             var upload_url = baseURL + url.resolveScript({ deploymentId: 'customdeploy_sl_suburb_mapping', scriptId: 'customscript_sl_suburb_mapping' }) + '&custparam_params=' + params;
@@ -126,7 +143,7 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                     ],
                     columnDefs: [
                         {
-                            targets: [2, 14], 
+                            targets: [2, 7, 14], 
                             visible: false,
                         },
                         {
@@ -244,8 +261,6 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
             // var target = $(e.target).attr("href") // activated tab
             // alert(target);
             var main_selector = $('div.tab-pane.active').attr('id');
-            console.log('Changed Tab - ' + main_selector);
-            toSaveSet = [];
             if (main_selector == 'mp_standard') {
                 console.log('MP Standard')
                 // $('.title_header').text('Suburb & Operator Mapping: MailPlus Standard');
@@ -259,7 +274,6 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                 // $('.title_header').text('Suburb & Operator Mapping: Sendle AU Express');
                 currRec.setValue({ fieldId: 'custpage_suburb_mapping_selector', value: 's_au_express' })
             }
-            console.log('Current Tab Selection - ' + currRec.getValue({ fieldId: 'custpage_suburb_mapping_selector'}));
         });
 
         // Add Suburbs
@@ -278,224 +292,230 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
             var suburbObject = [];
 
             if (main_selector == 'mp_standard'){
-                var addSuburb = search.load({ type: 'customrecord_dom_zones', id: 'customsearch_sendle_dom_zones' });
+                var addSuburb = search.load({ type: 'customrecord_dom_zones', id: 'customsearch_sendle_dom_zones_5' }); //customsearch_sendle_dom_zones
                 if (!isNullorEmpty(sub_name)){
-                    console.log('Inside Sub Name: ' + sub_name)
                     addSuburb.filters.push(search.createFilter({
                         name: 'custrecord_dom_zones_suburb_name',
                         operator: search.Operator.IS,
                         values: sub_name
                     }));
                 } else if (!isNullorEmpty(post_code) || post_code != NaN || post_code != 0){
-                    console.log('Inside Post Code: ' + post_code)
                     addSuburb.filters.push(search.createFilter({
                         name: 'custrecord_dom_zones_postcode',
                         operator: search.Operator.IS,
                         values: post_code
                     }));
                 }
-                addSuburb.run().each(function(row_list){
-                    var prim_input_field = '';
-                    var display_prim_id = '';
-                    var display_prim_email = '';
-                    var display_prim_num = '';
-                    var secondary_input_field = '';
-                    var secondary_json = '';
-    
-                    var internalid = row_list.getValue({name: "internalid", label: "Internal ID"})
-                    console.log(internalid);
-                    var sub_name = row_list.getValue({
-                        name: "custrecord_dom_zones_suburb_name",
-                        sort: search.Sort.ASC,
-                        label: "Suburb Name"
-                    })
-                    var post_code = row_list.getValue({name: "custrecord_dom_zones_postcode", label: "Postcode"}) // 2000 etc
-                    var country_code = row_list.getValue({name: "custrecord_dom_zones_country_code", label: "Country Code"}) // AU
-                    var zone_id = row_list.getText({name: "custrecord_dom_zones_zone_id", label: "Zone ID"}) // AU-Sydney | AU-Adelaide etc
-                    // var zones = row_list.getValue({name: "custrecord_dom_zones_ns_zones", label: "Sender Zones"}) // SYD | MEL etc
-    
-                    /**
-                     *  Primary Operator
-                     */
-                    var prim_email = ''; //row_list.getValue({ name: 'custrecord_sendleplus_prim_email' });
-                    var prim_num = ''; //row_list.getValue({ name: 'custrecord_sendleplus_prim_phone_num' });
-                    var prim_id = '';
-                    var prim_input_field = '<select id="primary_filter" class="form-control primary_operator ui search dropdown">'; //select2 //selectpicker
-                    var prim_index = 0;
-    
-                    if (!isNullorEmpty(prim_id)) {
-                        prim_index = 1;
-                    } else {
-                        prim_index = 0;
-                    }
-                    primOperatorSet.forEach(function (operatorRecord) {
-                        var new_op_id = operatorRecord.values.internalid[0].value;
-                        var new_op_email = operatorRecord.values.custrecord_operator_email
-                        var new_op_name = operatorRecord.values.name;
-                        var new_op_num = operatorRecord.values.custrecord_operator_phone;
-    
-                        if (prim_index == 0){
-                            prim_input_field += '<option new_id="' + new_op_id + '" name="' + new_op_name + '" old_id="' + prim_id + '" email="' + new_op_email + '" phone="' + new_op_num + '" selected>' + new_op_name + '</option>';
-    
-                            prim_id = new_op_id;
-                            prim_num = new_op_num;
-                            prim_email = new_op_email;
+                var addSuburbSetLength = parseInt(addSuburb.runPaged().count);
+                if (addSuburbSetLength.length > 0) {
+                    addSuburb.run().each(function(row_list){
+                        var prim_input_field = '';
+                        var display_prim_id = '';
+                        var display_prim_email = '';
+                        var display_prim_num = '';
+                        var secondary_input_field = '';
+                        var secondary_json = '';
+        
+                        var internalid = row_list.getValue({name: "internalid", label: "Internal ID"})
+                        var sub_name = row_list.getValue({
+                            name: "custrecord_dom_zones_suburb_name",
+                            sort: search.Sort.ASC,
+                            label: "Suburb Name"
+                        })
+                        var post_code = row_list.getValue({name: "custrecord_dom_zones_postcode", label: "Postcode"}) // 2000 etc
+                        var country_code = row_list.getValue({name: "custrecord_dom_zones_country_code", label: "Country Code"}) // AU
+                        var zone_id = row_list.getText({name: "custrecord_dom_zones_zone_id", label: "Zone ID"}) // AU-Sydney | AU-Adelaide etc
+                        // var zones = row_list.getValue({name: "custrecord_dom_zones_ns_zones", label: "Sender Zones"}) // SYD | MEL etc
+        
+                        /**
+                         *  Primary Operator
+                         */
+                        var prim_email = ''; //row_list.getValue({ name: 'custrecord_sendleplus_prim_email' });
+                        var prim_num = ''; //row_list.getValue({ name: 'custrecord_sendleplus_prim_phone_num' });
+                        var prim_id = '';
+                        var prim_input_field = '<select id="primary_filter" class="form-control primary_operator ui search dropdown">'; //select2 //selectpicker
+                        var prim_index = 0;
+        
+                        if (!isNullorEmpty(prim_id)) {
+                            prim_index = 1;
                         } else {
-                            prim_input_field += '<option new_id="' + new_op_id + '" name="' + new_op_name + '" old_id="' + prim_id + '" email="' + new_op_email + '" phone="' + new_op_num + '">' + new_op_name + '</option>';
+                            prim_index = 0;
                         }
+                        primOperatorSet.forEach(function (operatorRecord) {
+                            var new_op_id = operatorRecord.values.internalid[0].value;
+                            var new_op_email = operatorRecord.values.custrecord_operator_email
+                            var new_op_name = operatorRecord.values.name;
+                            var new_op_num = operatorRecord.values.custrecord_operator_phone;
+        
+                            if (prim_index == 0){
+                                prim_input_field += '<option new_id="' + new_op_id + '" name="' + new_op_name + '" old_id="' + prim_id + '" email="' + new_op_email + '" phone="' + new_op_num + '" selected>' + new_op_name + '</option>';
+        
+                                prim_id = new_op_id;
+                                prim_num = new_op_num;
+                                prim_email = new_op_email;
+                            } else {
+                                prim_input_field += '<option new_id="' + new_op_id + '" name="' + new_op_name + '" old_id="' + prim_id + '" email="' + new_op_email + '" phone="' + new_op_num + '">' + new_op_name + '</option>';
+                            }
+                            
+        
+                            prim_index++;
+                            return true;
+                        });
+                        display_prim_id = prim_id
+                        display_prim_email = prim_email  
+                        display_prim_num = prim_num;
+                        prim_input_field += '</select>';
+        
+                        /**
+                         *  Secondary Op:
+                         */
+                        var secondary_input_field = '<select id="secondary_operator" class="ui fluid search dropdown secondary_operator" json="" multiple="">'
+        
+                        operatorSet.forEach(function (secOperatorRes) {
+                            var sec_op_id = secOperatorRes.values.internalid[0].value;
+                            var sec_op_email = secOperatorRes.values.custrecord_operator_email;
+                            var sec_op_name = secOperatorRes.values.name;
+                            var sec_op_num = secOperatorRes.values.custrecord_operator_phone;
+                            var sec_op_zee = secOperatorRes.values.custrecord_operator_franchisee[0].text;
+        
+                            secondary_input_field += '<option sec_id="' + sec_op_id + '" name="' + sec_op_name + '" email="' + sec_op_email + '" phone="' + sec_op_num + '" zee="' + sec_op_zee + '">' + sec_op_name + ' (' + sec_op_zee + ')</option>';
+        
+                            return true;
+                        });
+                        secondary_input_field += '</select>';
+        
+                        suburbObject.push([
+                            '<button class="btn btn-danger btn-sm remove_suburb glyphicon glyphicon-trash" type="button" data-toggle="tooltip" data-placement="right" title="Delete"></button>',
+                            internalid,
+                            post_code, 
+                            sub_name,
+                            zone_id,
+                            prim_input_field, 
+                            display_prim_id, 
+                            display_prim_email, 
+                            display_prim_num, 
+                            secondary_input_field, 
+                            '<p class="sec_json" id="sec_json" changed="false"></p>', //secondary_json 
+                            'True'
+                        ]);
                         
-    
-                        prim_index++;
                         return true;
                     });
-                    display_prim_id = prim_id
-                    display_prim_email = prim_email  
-                    display_prim_num = prim_num;
-                    prim_input_field += '</select>';
-    
-                    /**
-                     *  Secondary Op:
-                     */
-                    var secondary_input_field = '<select id="secondary_operator" class="ui fluid search dropdown secondary_operator" json="" multiple="">'
-    
-                    operatorSet.forEach(function (secOperatorRes) {
-                        var sec_op_id = secOperatorRes.values.internalid[0].value;
-                        var sec_op_email = secOperatorRes.values.custrecord_operator_email;
-                        var sec_op_name = secOperatorRes.values.name;
-                        var sec_op_num = secOperatorRes.values.custrecord_operator_phone;
-                        var sec_op_zee = secOperatorRes.values.custrecord_operator_franchisee[0].text;
-    
-                        secondary_input_field += '<option sec_id="' + sec_op_id + '" name="' + sec_op_name + '" email="' + sec_op_email + '" phone="' + sec_op_num + '" zee="' + sec_op_zee + '">' + sec_op_name + ' (' + sec_op_zee + ')</option>';
-    
-                        return true;
-                    });
-                    secondary_input_field += '</select>';
-    
-                    suburbObject.push([
-                        '<button class="btn btn-danger btn-sm remove_suburb glyphicon glyphicon-trash" type="button" data-toggle="tooltip" data-placement="right" title="Delete"></button>',
-                        internalid,
-                        post_code, 
-                        sub_name,
-                        zone_id,
-                        prim_input_field, 
-                        display_prim_id, 
-                        display_prim_email, 
-                        display_prim_num, 
-                        secondary_input_field, 
-                        '<p class="sec_json" id="sec_json" changed="false"></p>', //secondary_json 
-                        'True'
-                    ]);
-                    
-                    return true;
-                });
+                } else {
+                    alert('Invalid Suburb Name or Post Code')
+                }
             } else {
                 var addSuburb = search.load({ type: 'customrecord_sendleplus_mapping_list', id: 'customsearch_sendleplus_mapping_search' });
                 if (!isNullorEmpty(sub_name)){
-                    console.log('Inside Sub Name: ' + sub_name)
                     addSuburb.filters.push(search.createFilter({
                         name: 'custrecord_sendleplus_sub_name',
                         operator: search.Operator.IS,
                         values: sub_name
                     }));
                 } else if (!isNullorEmpty(post_code) || post_code != NaN || post_code != 0){
-                    console.log('Inside Post Code: ' + post_code)
                     addSuburb.filters.push(search.createFilter({
                         name: 'custrecord_sendleplus_postcode',
                         operator: search.Operator.EQUALTO,
                         values: post_code
                     }));
                 }
-                addSuburb.run().each(function(row_list){
-                    var prim_input_field = '';
-                    var display_prim_id = '';
-                    var display_prim_email = '';
-                    var display_prim_num = '';
-                    var secondary_input_field = '';
-                    var secondary_json = '';
-    
-                    var internalid = row_list.getValue({name: "internalid", label: "Internal ID"})
-                    var sub_name = row_list.getValue({ name: "custrecord_sendleplus_sub_name" })
-                    var sub_code = row_list.getValue({ name: "custrecord_sendleplus_sub_code" })
-                    var post_code = row_list.getValue({ name: "custrecord_sendleplus_postcode" }) // 2000 etc
-                    var state = row_list.getValue({ name: "custrecord_sendleplus_state" })
-    
-                    /**
-                     *  Primary Operator
-                     */
-                    var prim_email = ''; //row_list.getValue({ name: 'custrecord_sendleplus_prim_email' });
-                    var prim_num = ''; //row_list.getValue({ name: 'custrecord_sendleplus_prim_phone_num' });
-                    var prim_id = '';
-                    var prim_input_field = '<select id="primary_filter" class="form-control primary_operator ui search dropdown">'; //select2 //selectpicker
-                    var prim_index = 0;
-    
-                    if (!isNullorEmpty(prim_id)) {
-                        prim_index = 1;
-                    } else {
-                        prim_index = 0;
-                    }
-                    primOperatorSet.forEach(function (operatorRecord) {
-                        var new_op_id = operatorRecord.values.internalid[0].value;
-                        var new_op_email = operatorRecord.values.custrecord_operator_email
-                        var new_op_name = operatorRecord.values.name;
-                        var new_op_num = operatorRecord.values.custrecord_operator_phone;
-    
-                        if (prim_index == 0){
-                            prim_input_field += '<option new_id="' + new_op_id + '" name="' + new_op_name + '" old_id="' + prim_id + '" email="' + new_op_email + '" phone="' + new_op_num + '" selected>' + new_op_name + '</option>';
-    
-                            prim_id = new_op_id;
-                            prim_num = new_op_num;
-                            prim_email = new_op_email;
+                var addSuburbSetLength = parseInt(addSuburb.runPaged().count);
+                if (addSuburbSetLength.length > 0){
+                    addSuburb.run().each(function(row_list){
+                        var prim_input_field = '';
+                        var display_prim_id = '';
+                        var display_prim_email = '';
+                        var display_prim_num = '';
+                        var secondary_input_field = '';
+                        var secondary_json = '';
+        
+                        var internalid = row_list.getValue({name: "internalid", label: "Internal ID"})
+                        var sub_name = row_list.getValue({ name: "custrecord_sendleplus_sub_name" })
+                        var sub_code = row_list.getValue({ name: "custrecord_sendleplus_sub_code" })
+                        var post_code = row_list.getValue({ name: "custrecord_sendleplus_postcode" }) // 2000 etc
+                        var state = row_list.getValue({ name: "custrecord_sendleplus_state" })
+        
+                        /**
+                         *  Primary Operator
+                         */
+                        var prim_email = ''; //row_list.getValue({ name: 'custrecord_sendleplus_prim_email' });
+                        var prim_num = ''; //row_list.getValue({ name: 'custrecord_sendleplus_prim_phone_num' });
+                        var prim_id = '';
+                        var prim_input_field = '<select id="primary_filter" class="form-control primary_operator ui search dropdown">'; //select2 //selectpicker
+                        var prim_index = 0;
+        
+                        if (!isNullorEmpty(prim_id)) {
+                            prim_index = 1;
                         } else {
-                            prim_input_field += '<option new_id="' + new_op_id + '" name="' + new_op_name + '" old_id="' + prim_id + '" email="' + new_op_email + '" phone="' + new_op_num + '">' + new_op_name + '</option>';
+                            prim_index = 0;
                         }
+                        primOperatorSet.forEach(function (operatorRecord) {
+                            var new_op_id = operatorRecord.values.internalid[0].value;
+                            var new_op_email = operatorRecord.values.custrecord_operator_email
+                            var new_op_name = operatorRecord.values.name;
+                            var new_op_num = operatorRecord.values.custrecord_operator_phone;
+        
+                            if (prim_index == 0){
+                                prim_input_field += '<option new_id="' + new_op_id + '" name="' + new_op_name + '" old_id="' + prim_id + '" email="' + new_op_email + '" phone="' + new_op_num + '" selected>' + new_op_name + '</option>';
+        
+                                prim_id = new_op_id;
+                                prim_num = new_op_num;
+                                prim_email = new_op_email;
+                            } else {
+                                prim_input_field += '<option new_id="' + new_op_id + '" name="' + new_op_name + '" old_id="' + prim_id + '" email="' + new_op_email + '" phone="' + new_op_num + '">' + new_op_name + '</option>';
+                            }
+                            
+        
+                            prim_index++;
+                            return true;
+                        });
+                        display_prim_id = prim_id
+                        display_prim_email = prim_email  
+                        display_prim_num = prim_num;
+                        prim_input_field += '</select>';
+        
+                        /**
+                         *  Secondary Op:
+                         */
+                        var secondary_input_field = '<select id="secondary_operator" class="ui fluid search dropdown secondary_operator" json="" multiple="">'
+        
+                        operatorSet.forEach(function (secOperatorRes) {
+                            var sec_op_id = secOperatorRes.values.internalid[0].value;
+                            var sec_op_email = secOperatorRes.values.custrecord_operator_email;
+                            var sec_op_name = secOperatorRes.values.name;
+                            var sec_op_num = secOperatorRes.values.custrecord_operator_phone;
+                            var sec_op_zee = secOperatorRes.values.custrecord_operator_franchisee[0].text;
+        
+                            secondary_input_field += '<option sec_id="' + sec_op_id + '" name="' + sec_op_name + '" email="' + sec_op_email + '" phone="' + sec_op_num + '" zee="' + sec_op_zee + '">' + sec_op_name + ' (' + sec_op_zee + ')</option>';
+        
+                            return true;
+                        });
+                        secondary_input_field += '</select>';
+        
+                        suburbObject.push([
+                            '<button class="btn btn-danger btn-sm remove_suburb glyphicon glyphicon-trash" type="button" data-toggle="tooltip" data-placement="right" title="Delete"></button>', //0
+                            internalid, //1
+                            '',
+                            sub_code, //2
+                            post_code, //3 
+                            sub_name, //4
+                            state, //5
+                            '<select class="ui search dropdown" disabled>'+zee_name+'</select>', //6
+                            prim_input_field, //7 
+                            display_prim_id, //8 
+                            display_prim_email, //9 
+                            display_prim_num, //10 
+                            secondary_input_field, //11 
+                            '<p class="sec_json" id="sec_json" changed="false"></p>', //12 //secondary_json 
+                            'True' //13
+                        ]);
                         
-    
-                        prim_index++;
                         return true;
                     });
-                    display_prim_id = prim_id
-                    display_prim_email = prim_email  
-                    display_prim_num = prim_num;
-                    prim_input_field += '</select>';
-    
-                    /**
-                     *  Secondary Op:
-                     */
-                    var secondary_input_field = '<select id="secondary_operator" class="ui fluid search dropdown secondary_operator" json="" multiple="">'
-    
-                    operatorSet.forEach(function (secOperatorRes) {
-                        var sec_op_id = secOperatorRes.values.internalid[0].value;
-                        var sec_op_email = secOperatorRes.values.custrecord_operator_email;
-                        var sec_op_name = secOperatorRes.values.name;
-                        var sec_op_num = secOperatorRes.values.custrecord_operator_phone;
-                        var sec_op_zee = secOperatorRes.values.custrecord_operator_franchisee[0].text;
-    
-                        secondary_input_field += '<option sec_id="' + sec_op_id + '" name="' + sec_op_name + '" email="' + sec_op_email + '" phone="' + sec_op_num + '" zee="' + sec_op_zee + '">' + sec_op_name + ' (' + sec_op_zee + ')</option>';
-    
-                        return true;
-                    });
-                    secondary_input_field += '</select>';
-    
-                    suburbObject.push([
-                        '<button class="btn btn-danger btn-sm remove_suburb glyphicon glyphicon-trash" type="button" data-toggle="tooltip" data-placement="right" title="Delete"></button>', //0
-                        internalid, //1
-                        '',
-                        sub_code, //2
-                        post_code, //3 
-                        sub_name, //4
-                        state, //5
-                        '<select class="ui search dropdown" disabled>'+zee_name+'</select>', //6
-                        prim_input_field, //7 
-                        display_prim_id, //8 
-                        display_prim_email, //9 
-                        display_prim_num, //10 
-                        secondary_input_field, //11 
-                        '<p class="sec_json" id="sec_json" changed="false"></p>', //12 //secondary_json 
-                        'True' //13
-                    ]);
-                    
-                    return true;
-                });
+                } else {
+                    alert('Invalid Suburb Name or Post Code')
+                }
+                
             }
             
             console.log('Update Datatable')
@@ -510,7 +530,6 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
         });
         //Remove Suburbs
         $(document).on('click', '.remove_suburb', function() {
-            // console.log(this);
             var main_selector = $('div.tab-pane.active').attr('id');
             if (main_selector == 'mp_standard'){
                 var table3_id = '#data_preview3_' + main_selector;
@@ -570,10 +589,6 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
             var prim_name = $(this).closest('tr').find('.primary_operator option:selected').attr('name');
             var prim_email = $(this).closest('tr').find('.primary_operator option:selected').attr('email');
             var prim_num = $(this).closest('tr').find('.primary_operator option:selected').attr('phone');
-            var selection_zee_name = $(this).closest('tr').find('.sendleplus_zee').attr('name'); // Get Zee from Saved Zee in Record
-            if (isNullorEmpty(selection_zee_name)) { // If Zee has not be set.
-                selection_zee_name = $(this).closest('tr').find('.sendleplus_zee').attr('old'); // Set Zee from Zee Name
-            }
 
             var sec_array = [];
 
@@ -616,7 +631,6 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
             var cell = datatable3.cell(tr.find('.sec_json').closest('td'));
             cell.data(sec_html).draw();
 
-
             change = true; // Secondary Driver Change True
         });
 
@@ -630,10 +644,6 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
             var prim_name = '';
             var prim_email = '';
             var prim_num = '';
-            var selection_zee_name = $(this).closest('tr').find('.sendleplus_zee').attr('name'); // Get Zee from Saved Zee in Record
-            if (isNullorEmpty(selection_zee_name)) { // If Zee has not be set.
-                selection_zee_name = $(this).closest('tr').find('.sendleplus_zee').attr('old'); // Set Zee from Zee Name
-            }
             var sec_obj = $(this).closest('tr').find('.sec_json').text();
             if (!isNullorEmpty(sec_obj)) {
                 sec_obj = JSON.parse(sec_obj);
@@ -651,24 +661,18 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                 }
                 if (sec_id != -1) {
                     alert('This Primary Operator has already been Selected under Secondary Operator Selection');
-                    // return;
                 } else {
                     prim_name = $(this).attr('name');
                     prim_email = $(this).attr('email');
                     prim_num = $(this).attr('phone');
-                    // console.log('Prim Details: Name: ' + prim_name + ' Email: ' + prim_email + ' ID: ' + prim_id);
                     if (isNullorEmpty(prim_id)) {
                         prim_id = 0;
                         console.log('Sec Val: ' + sec_obj)
                         if (isNullorEmpty(sec_obj) && sec_obj.length == 0) {
                             selection_zee_name = null;
-                            //     // $(this).closest('tr').find('.sendleplus_zee').text('').change();
-                            //     $(this).closest('tr').find('.sendleplus_zee').val(0).change();
                             console.log('no longer in list')
                         }
                     } else {
-                        // $(this).closest('tr').find('.sendleplus_zee').text(zee_name).change();
-                        // $(this).closest('tr').find('.sendleplus_zee').val(1).change();
                         console.log('is in list')
                     }
                 }
@@ -685,83 +689,13 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
             datatable3.cell($(this).closest('td').next()).data(prim_id).draw();
             datatable3.cell($(this).closest('td').next().next()).data(prim_email).draw();
             datatable3.cell($(this).closest('td').next().next().next()).data(prim_num).draw();
-
-            // var indexOfFilter = toSaveSet.map(function (el) { return el.id }).indexOf(rec_id);
-            // if (indexOfFilter != -1) {
-            //     toSaveSet.splice(indexOfFilter, 1);
-            // }
-            // // if (old_prim_id != prim_id) {
-            // toSaveSet.push({ id: rec_id, prim_name: prim_name, old_prim_id: old_prim_id, prim_id: prim_id, prim_email: prim_email, prim_num: prim_num, secondary_json: sec_obj, zee_name: selection_zee_name, change: change });
-            // // }
-            // console.log(toSaveSet);
         })
 
-        /**
-         *  Franchisee : JQuery
-         */
-        $(document).on('change', '.zee_dropdown', function () {
-            var sec_obj = [];
-            var tr = $(this).closest('tr');
-            var prim_op = tr.find('.primary_operator option:selected');
-
-            var rec_id = tr.find('.internal_id').attr('id');
-
-            var old_prim_id = prim_op.attr('old_id');
-            var prim_id = prim_op.attr('new_id');
-            var prim_name = prim_op.attr('name');
-            var prim_email = prim_op.attr('email');
-            var prim_num = prim_op.attr('phone');
-            var sec_obj = tr.find('.sec_json').text();
-            if (!isNullorEmpty(sec_obj)) {
-                sec_obj = JSON.parse(sec_obj);
-            }
-
-            var selection_zee_name = '';
-
-            var zee_sec_table = $(this).attr('sec_table');
-            var selection_change = change;
-            console.log('Secondary Table Dropdown? : ' + zee_sec_table);
-
-            $('option:selected', this).each(function (index) {
-                // console.log('Prim Details: Name: ' + prim_name + ' Email: ' + prim_email + ' ID: ' + prim_id);
-                // var saved_zee = $(this).attr('name');
-                var current_zee = $(this).text();
-                if (current_zee == '- None -') { current_zee = null; }
-                console.log('Current Zee: ' + current_zee)
-                selection_zee_name = current_zee;
-                console.log('Sec Val: ' + sec_obj)
-
-                selection_change = true;
-
-                if (isNullorEmpty(current_zee)) {
-                    prim_id = 0;
-                    prim_name = '';
-                    prim_email = '';
-                    prim_num = '';
-
-                    sec_obj = [];
-
-                    $(this).find('.primary_operator').val(0);
-                    $(this).find('.secondary_operator').val(0);
-
-                    selection_change = false;
-                }
-            });
-
-            // var indexOfFilter = toSaveSet.map(function (el) { return el.id }).indexOf(rec_id);
-            // if (indexOfFilter != -1) {
-            //     toSaveSet.splice(indexOfFilter, 1);
-            // }
-            // // if (old_prim_id != prim_id) {
-            // toSaveSet.push({ id: rec_id, prim_name: prim_name, old_prim_id: old_prim_id, prim_id: prim_id, prim_email: prim_email, prim_num: prim_num, secondary_json: sec_obj, zee_name: selection_zee_name, change: selection_change });
-            // // }
-            // console.log(toSaveSet);
-        })
-
+        /** REDIRECT */
         $('#updateSaveRecord').click(function () {
             var selector = $('div.tab-pane.active').attr('id');
             console.log('Selector at Submit: ' + selector)
-            saveArray(toSaveSet, selector);
+            saveArray(selector);
 
             var params = {
                 zeeid: zee_id,
@@ -831,9 +765,7 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
      */
     function loadDatatable(zee_id, zee_name, zee_state, selector, table2_id, table3_id) { // Zee id = Waterloo 699991;
         console.log("Load Datatable")
-        console.log('Selector: ' + selector);
         
-        dataSet = [];
         dataSet2 = [];
         dataSet3 = [];
 
@@ -866,24 +798,28 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
 
         // if (isNullorEmpty(suburbSet)) {
         var zeeSuburbsList = record.load({ type: 'partner', id: zee_id });
-        if (selector == 'mp_standard' || selector == 'mp_express') {
+        if (selector == 'mp_standard' || selector == 'mp_express') { // Get Network Matrix
             var suburbListString = zeeSuburbsList.getValue({ fieldId: 'custentity_network_matrix_main' });
             if (!isNullorEmpty(suburbListString)) {
                 suburbList = [];
+                suburbListState = [];
                 suburbSet = suburbListString.split("\n"); // ['1', '2'. 3', '4']
                 console.log('Suburb List: Network Matrix ' + JSON.stringify(suburbSet));
                 suburbSet.forEach(function (suburb) { // ZetLand (NSW)
                     if (suburb.includes(' (')) {
                         suburbList.push(suburb.split(' (')[0]); // If String Contains (SA) etc, remove it. 
+                        suburbListState.push((suburb.split(' (')[1]).split(')')[0]) // If String Contains State, Add State into new Array.
                     } else {
                         suburbList.push(suburb);
+                        suburbListState.push(zee_state); // Default State to Being Same as Zee State.
                     }
                 });
             }
             var JSON_suburb = zeeSuburbsList.getValue({ fieldId: 'custentity_network_matrix_json' });
             console.log(JSON_suburb)
-        } else if (selector == 's_au_express') { //
+        } else if (selector == 's_au_express') { // Get SendlePlus Mapping List
             suburbList = [];
+            suburbListState = [];
             var suburbListString = zeeSuburbsList.getValue({ fieldId: 'custentity_sendle_recovery_suburbs_main' });
             if (!isNullorEmpty(suburbListString)) {
                 suburbSet = suburbListString.split(','); // ['1', '2'. 3', '4']
@@ -891,8 +827,10 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                 suburbSet.forEach(function (suburb) { // ZetLand (NSW)
                     if (suburb.includes(' (')) {
                         suburbList.push(suburb.split(' (')[0]); // If String Contains (SA) etc, remove it. 
+                        suburbListState.push((suburb.split(' (')[1]).split(')')[0]) // If String Contains State, Add State into new Array.
                     } else {
                         suburbList.push(suburb);
+                        suburbListState.push(zee_state); // Default State to Being Same as Zee State.
                     }
                 });
             }
@@ -900,7 +838,9 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
             console.log(JSON_suburb)
         }
         console.log(suburbList);
+        console.log(suburbListState);
 
+        // @ FORMAT OF IF ELSE CONDITIONS @
         // if (selector == 'mp_standard') { // Not MP Express or Sendle Express - Use Sendle Depot One.
         // } else if (selector == 'mp_express'){
         // } else if (selector == 's_au_express') {
@@ -911,7 +851,7 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                 /** 
                  * Primary Datatable: MP Standard
                 */
-                var dataMatchingSetSearch = search.load({ type: 'customrecord_dom_zones', id: 'customsearch_sendle_dom_zones' }); // Sendle Domestic Pickup Zones - All 
+                var dataMatchingSetSearch = search.load({ type: 'customrecord_dom_zones', id: 'customsearch_sendle_dom_zones_5' }); // Sendle Domestic Pickup Zones - All - customsearch_sendle_dom_zones
 
                 var matchingFilterExpression = [];
                 matchingFilterExpression.push(['isinactive', search.Operator.IS, 'F']); // Is Active
@@ -919,7 +859,17 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                 if (suburbList.length > 0) {
                     var suburbExpression = [];
                     for (var i = 0; i < suburbList.length; i++) {
-                        suburbExpression.push(['custrecord_dom_zones_suburb_name', search.Operator.IS, suburbList[i]]); // Filter for Suburbs Containing the Name from Suburb List
+                        // Define Post Code Range using State.
+                        var zee_state_position = zee_state_array.indexOf(suburbListState[i]);
+                        var zee_postcode_val = zee_state_postcode[zee_state_position];
+
+                        var surburbWithStateExpression = [];
+                        surburbWithStateExpression.push(['custrecord_dom_zones_suburb_name', search.Operator.IS, suburbList[i]]);
+                        surburbWithStateExpression.push('AND');
+                        surburbWithStateExpression.push(['custrecord_dom_zones_postcode', search.Operator.STARTSWITH, zee_postcode_val]);
+                        suburbExpression.push(surburbWithStateExpression);
+
+                        // suburbExpression.push(['custrecord_dom_zones_suburb_name', search.Operator.IS, suburbList[i]]); // Filter for Suburbs Containing the Name from Suburb List
                         suburbExpression.push('OR');
                     }
                     suburbExpression.pop(); // remove the last 'or'
@@ -927,8 +877,6 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                 } else {
                     matchingFilterExpression.pop();
                 }
-                // matchingFilterExpression.push('AND')
-                // matchingFilterExpression.push(['custrecord_dom_zones_postcode', search.Operator.STARTSWITH, zee_postcode]);
                 dataMatchingSetSearch.filterExpression = matchingFilterExpression;
 
                 console.log('Filter Expression - ' + selector + ' : G ' + JSON.stringify(matchingFilterExpression));
@@ -953,7 +901,6 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                         var opJSON = JSON.parse(JSON_suburb);
                         var opSet = opJSON.filter(function (el){ if (el.suburbs.includes(sub_name)) {return el }})
                         // var sub_name = opSet[0].suburbs;
-                        // console.log(opSet[0].suburbs);
                         
                         console.log('Prim Index - Sub Name: ' + sub_name);
                         var post_code = row_list.getValue({name: "custrecord_dom_zones_postcode", label: "Postcode"}) // 2000 etc
@@ -965,8 +912,6 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                         var internalid = row_list.getValue({ name: 'internalid' }) // Netsuite ID for Record
                         var sub_code = ''; // row_list.getValue({ name: 'custrecord_sendleplus_sub_code' });
                         // sub_code = '<p class="internal_id" id="' + internalid + '">' + row_list.getValue({ name: 'custrecord_sendleplus_sub_code' }); + "</p>";
-
-                        var sendleplus_zee = ''; // row_list.getValue({ name: 'custrecord_sendleplus_zee' });
 
                         var prim_name = ''; //row_list.getValue({ name: 'custrecord_sendleplus_prim_name' });
                         
@@ -986,7 +931,6 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                         /**
                          *  Primary Operator
                          */
-                        // console.log(opSet[0].primary_op);
                         if (!isNullorEmpty(opSet[0])){
                             if (!isNullorEmpty(opSet[0].primary_op)){
                                 var prim_id = opSet[0].primary_op; //   - POPULATE THIS!!!!
@@ -1117,13 +1061,17 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
 
                 var matchingFilterExpression = [];
                 matchingFilterExpression.push(['isinactive', search.Operator.IS, 'F']); // Is Active
-                // matchingFilterExpression.push('AND')
-                // matchingFilterExpression.push(['custrecord_sendleplus_state', search.Operator.IS, zee_state]); // Filter for State
                 matchingFilterExpression.push('AND')
                 if (suburbList.length > 0) {
                     var suburbExpression = [];
                     for (var i = 0; i < suburbList.length; i++) {
-                        suburbExpression.push(['custrecord_sendleplus_sub_name', search.Operator.IS, suburbList[i]]); // STARTSWITH - Filter for Suburbs Containing the Name from Suburb List
+                        var surburbWithStateExpression = [];
+                        surburbWithStateExpression.push(['custrecord_sendleplus_sub_name', search.Operator.IS, suburbList[i]]);
+                        surburbWithStateExpression.push('AND');
+                        surburbWithStateExpression.push(['custrecord_sendleplus_state', search.Operator.IS, suburbListState[i]]);
+                        suburbExpression.push(surburbWithStateExpression);
+
+                        // suburbExpression.push(['custrecord_sendleplus_sub_name', search.Operator.IS, suburbList[i]]); // STARTSWITH - Filter for Suburbs Containing the Name from Suburb List
                         suburbExpression.push('OR');
                     }
                     suburbExpression.pop(); // remove the last 'or'
@@ -1131,8 +1079,6 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                 } else {
                     matchingFilterExpression.pop();
                 }
-                // matchingFilterExpression.push('AND');
-                // matchingFilterExpression.push(['custrecord_sendleplus_postcode', search.Operator.STARTSWITH, zee_postcode])
 
                 dataMatchingSetSearch.filterExpression = matchingFilterExpression;
 
@@ -1163,15 +1109,6 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                         var post_code = row_list.getValue({ name: 'custrecord_sendleplus_postcode' });
 
                         var state = row_list.getValue({ name: 'custrecord_sendleplus_state' });
-                        var sendleplus_zee = row_list.getValue({ name: 'custrecord_sendleplus_zee' });
-                        // console.log('SendlePlus Zee + Zee: ' + sendleplus_zee + ' ' + zee_name);
-                        var mile_option = row_list.getValue({ name: 'custrecord_sendleplus_mile' });
-                        console.log('Mile Op: ' + mile_option + " Zee: " + sendleplus_zee);
-                        var autofill_mile = false;
-                        if (!isNullorEmpty(sendleplus_zee) && isNullorEmpty(mile_option) && zee_name == sendleplus_zee) {
-                            console.log('SendlePlus Zee is Selected and Is Same as Assigned Zee.')
-                            autofill_mile = true;
-                        }
 
                         var prim_name = row_list.getValue({ name: 'custrecord_sendleplus_prim_name' });
                         // var prim_id = row_list.getValue({ name: 'custrecord_sendleplus_prim_id' });
@@ -1198,21 +1135,7 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
 
                         var sorting = 'True';
 
-                        var zee_dropdown = '<select id="zee_filter" class="form-control zee_dropdown ui dropdown" disabled>';
-                        zee_dropdown += '<option>- None -</option>';
-                        if (!isNullorEmpty(sendleplus_zee)) { // if Zee Has been Set
-                            zee_dropdown += '<option class="sendleplus_zee" name="' + sendleplus_zee + '" old="' + zee_name + '" selected>' + sendleplus_zee + '</option>';
-                            if (sendleplus_zee != zee_name) {
-                                zee_dropdown += '<option class="sendleplus_zee" name="' + sendleplus_zee + '" old="' + zee_name + '">' + zee_name + '</option>';
-                            }
-                        } else {
-                            if (prim_id != 0) {
-                                zee_dropdown += '<option class="sendleplus_zee" name="' + sendleplus_zee + '" old="' + zee_name + '" selected>' + zee_name + '</option>';
-                            } else {
-                                zee_dropdown += '<option class="sendleplus_zee" name="' + sendleplus_zee + '" old="' + zee_name + '">' + zee_name + '</option>';
-                            }
-                        }
-                        zee_dropdown += '</select>'
+                        var zee_dropdown = '';
 
                         /**
                          *  Primary Operator
@@ -1258,35 +1181,6 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                             prim_index++;
                             return true;
                         });
-
-                        if (sendleplus_zee != zee_name && !isNullorEmpty(sendleplus_zee)) { // If Zee displayed is a different zee to
-                            // } else {
-                            /**
-                             *  Primary Operator
-                             */
-                            prim_input_field = '<select id="primary_filter" class="form-control primary_operator ui search dropdown" disabled>';
-                            var specOpSet = $.map(operatorSet, function (el, key) { if (el.values.custrecord_operator_franchisee[0].text == sendleplus_zee) return el; });
-                            specOpSet.forEach(function (operatorRecord) {
-                                var spec_op_id = operatorRecord.values.internalid[0].value;
-                                var spec_op_email = operatorRecord.values.custrecord_operator_email
-                                var spec_op_name = operatorRecord.values.name;
-                                var spec_op_num = operatorRecord.values.custrecord_operator_phone;
-
-                                if (prim_id == spec_op_id) {
-                                    prim_input_field += '<option new_id="' + spec_op_id + '" name="' + spec_op_name + '" old_id="' + prim_id + '" email="' + spec_op_email + '" phone="' + spec_op_num + '" selected>' + spec_op_name + '</option>';
-
-                                    prim_id = spec_op_id;
-                                    prim_email = spec_op_email;
-                                    prim_num = spec_op_num
-
-                                    display_prim_id = spec_op_id;
-                                    display_prim_email = spec_op_email;
-                                    display_prim_num = spec_op_num
-                                }
-
-                                return true;
-                            });
-                        }
 
                         prim_input_field += '</select>';
                         if (index == 0) {
@@ -1351,7 +1245,6 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
         var datatable2 = $(table2_id).DataTable();
         datatable2.clear();
         datatable2.rows.add(dataSet2);
-        baseDataSet2 = dataSet2
         datatable2.draw();
 
         var datatable3 = $(table3_id).DataTable();
@@ -1397,35 +1290,33 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
         row.child.hide();
     }
 
-    function saveArray(toSaveSet, selector) {
+    function saveArray(selector) {
         console.log('Save Function: Initialise');
-        // console.log('Array: ' + JSON.stringify(toSaveSet));
         if (selector == 'mp_standard'){
             console.log('Initialise: MP Standard')
             var datatable3 = $('#data_preview3_mp_standard').DataTable();
             var tableDataSet = datatable3.data().toArray();
-            // console.log(tableDataSet);
 
             var JSON_save = [];
             var MAIN_save = '';
             // JSON Details - Evenutally needs to be stored
             tableDataSet.forEach(function(tableData) {
                 var suburb_name = tableData[3]; // Suburb Name,
-                var post_code = tableData[1]; // Postcode,
-                var state = zee_state; // State,
+                var post_code = tableData[2]; // Postcode,
+                // Creating New State for Suburb Name
+                var state_position = zee_state_postcode.indexOf(parseInt(post_code.split('')[0]))
+                var state = zee_state_array[state_position];
+
                 var prim_op_id = tableData[6]; // Primary Operator ID,
-                // var prim_op_id = $(this).find('.primary_operator option:selected').attr('new_id'); //.closest('tr')
                 var secondary_op_json = tableData[10]; // Secondary Operator ID
                 secondary_op_json = (secondary_op_json.split('<')[1]).split('>')[1];
                 if (!isNullorEmpty(secondary_op_json)){
                     secondary_op_json = JSON.parse(secondary_op_json);
                 }
-                console.log(secondary_op_json)
-                // var secondary_op_json = $(this).closest('tr').find('.sec_json').text();
                 var next_day = null;
 
                 JSON_save.push({"suburbs": suburb_name, post_code: post_code, state: state, "primary_op" : prim_op_id, secondary_op: secondary_op_json, "next_day" : next_day});
-                MAIN_save += (suburb_name + '\n');
+                MAIN_save += (suburb_name + ' (' + state + ') '+ '\n'); //MAIN_save += (suburb_name + '\n'); //
             });
             console.log(JSON_save);
             console.log(MAIN_save)
@@ -1438,7 +1329,6 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
             console.log('Initialise: MP Express');
             var datatable2 = $('#data_preview2_mp_express').DataTable();
             var tableDataSet = datatable2.data().toArray();
-            // console.log(tableDataSet);
 
             var JSON_save = [];
             var MAIN_save = '';
@@ -1446,20 +1336,17 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
             tableDataSet.forEach(function(tableData) {
                 var suburb_name = tableData[5]; // Suburb Name,
                 var post_code = tableData[4]; // Postcode,
-                var state = zee_state; // State,
+                var state = tableData[6]; // State,
                 var prim_op_id = tableData[9]; // Primary Operator ID,
-                // var prim_op_id = $(this).find('.primary_operator option:selected').attr('new_id'); //.closest('tr')
                 var secondary_op_json = tableData[12]; // Secondary Operator ID
                 secondary_op_json = (secondary_op_json.split('<')[1]).split('>')[1];
                 if (!isNullorEmpty(secondary_op_json)){
                     secondary_op_json = JSON.parse(secondary_op_json);
                 }
-                console.log(secondary_op_json)
-                // var secondary_op_json = $(this).closest('tr').find('.sec_json').text();
                 var next_day = null;
 
                 JSON_save.push({"suburbs": suburb_name, post_code: post_code, state: state, "primary_op" : prim_op_id, secondary_op: secondary_op_json, "next_day" : next_day});
-                MAIN_save += (suburb_name + '\n');
+                MAIN_save += (suburb_name + ' (' + state + ') '+ '\n'); //MAIN_save += (suburb_name + '\n'); //
             });
             console.log(JSON_save);
             console.log(MAIN_save)
@@ -1480,22 +1367,21 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
             tableDataSet.forEach(function(tableData) {
                 var suburb_name = tableData[5]; // Suburb Name,
                 var post_code = tableData[4]; // Postcode,
-                var state = zee_state; // State,
+                var state = tableData[6]; // State,
                 var prim_op_id = tableData[9]; // Primary Operator ID,
-                // var prim_op_id = $(this).find('.primary_operator option:selected').attr('new_id'); //.closest('tr')
                 var secondary_op_json = tableData[12]; // Secondary Operator ID
                 secondary_op_json = (secondary_op_json.split('<')[1]).split('>')[1];
                 if (!isNullorEmpty(secondary_op_json)){
                     secondary_op_json = JSON.parse(secondary_op_json);
                 }
                 console.log(secondary_op_json)
-                // var secondary_op_json = $(this).closest('tr').find('.sec_json').text();
                 var next_day = null;
 
                 JSON_save.push({"suburbs": suburb_name, post_code: post_code, state: state, "primary_op" : prim_op_id, secondary_op: secondary_op_json, "next_day" : next_day});
-                MAIN_save += (suburb_name + '\n');
+                MAIN_save += (suburb_name + ' (' + state + ') '+ '\n');
             });
             console.log(JSON_save);
+            console.log(MAIN_save);
             
             var zeeRecord = record.load({ type: 'partner', id: zee_id });
             zeeRecord.setValue({ fieldId: 'custentity_sendle_recovery_suburbs', value: JSON.stringify(JSON_save) })
