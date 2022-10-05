@@ -392,7 +392,7 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                 if (addSuburbSetLength > 0) {
                     addSuburb.run().each(function(row_list){
                         var sub_name = row_list.getValue({ name: "custrecord_sendleplus_sub_name" });
-
+                        
                         // If Suburb Is Already In List
                         var suburbInList = false
                         var datatable = $(table3_id).DataTable();
@@ -403,15 +403,7 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                                 suburbInList = true;
                             }
                         });
-
                         if (suburbInList == false){
-                            var prim_input_field = '';
-                            var display_prim_id = '';
-                            var display_prim_email = '';
-                            var display_prim_num = '';
-                            var secondary_input_field = '';
-                            var secondary_json = '';
-
                             var internalid = row_list.getValue({name: "internalid", label: "Internal ID"})
                             var sub_code = row_list.getValue({ name: "custrecord_sendleplus_sub_code" })
                             var post_code = row_list.getValue({ name: "custrecord_sendleplus_postcode" }) // 2000 etc
@@ -420,33 +412,53 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                             /**
                              *  Primary Operator
                              */
-                            var prim_email = ''; //row_list.getValue({ name: 'custrecord_sendleplus_prim_email' });
-                            var prim_num = ''; //row_list.getValue({ name: 'custrecord_sendleplus_prim_phone_num' });
-                            var prim_id = '';
-                            var prim_input_field = '<select id="primary_filter" class="form-control primary_operator ui search dropdown">'; //select2 //selectpicker
-                            var prim_index = 0;
+                            var prim_id = row_list.getValue({ name: 'custrecord_sendleplus_prim_id' });
+                            var prim_name = row_list.getValue({ name: 'custrecord_sendleplus_prim_name' });
+                            var prim_email = row_list.getValue({ name: 'custrecord_sendleplus_prim_email' });
+                            var prim_num = row_list.getValue({ name: 'custrecord_sendleplus_prim_phone_num' });
+                            // Display
+                            var display_prim_id = '';
+                            var display_prim_email = '';
+                            var display_prim_num = '';
+                            var display_prim_name = '';
             
                             if (!isNullorEmpty(prim_id)) {
-                                prim_index = 1;
+                                var prim_index = 1;
                             } else {
-                                prim_index = 0;
+                                var prim_index = 0;
                             }
+
+                            var prim_input_field = '<select id="primary_filter" class="form-control primary_operator ui search dropdown">'; //select2 //selectpicker
                             primOperatorSet.forEach(function (operatorRecord) {
                                 var new_op_id = operatorRecord.values.internalid[0].value;
                                 var new_op_email = operatorRecord.values.custrecord_operator_email
                                 var new_op_name = operatorRecord.values.name;
                                 var new_op_num = operatorRecord.values.custrecord_operator_phone;
             
-                                if (prim_index == 0){
+                                if (prim_index == 0) {
                                     prim_input_field += '<option new_id="' + new_op_id + '" name="' + new_op_name + '" old_id="' + prim_id + '" email="' + new_op_email + '" phone="' + new_op_num + '" selected>' + new_op_name + '</option>';
-            
+    
+                                    display_prim_id = new_op_id;
+                                    display_prim_email = new_op_email;
+                                    display_prim_num = new_op_num
+                                    display_prim_name = new_op_name;
+    
                                     prim_id = new_op_id;
-                                    prim_num = new_op_num;
                                     prim_email = new_op_email;
+                                    prim_num = new_op_num
+                                    prim_name = new_op_name;
+                                } else if (prim_id == new_op_id) {
+                                    prim_input_field += '<option new_id="' + new_op_id + '" name="' + new_op_name + '" old_id="' + prim_id + '" email="' + new_op_email + '" phone="' + new_op_num + '" selected>' + new_op_name + '</option>';
+    
+                                    display_prim_id = new_op_id;
+                                    display_prim_email = new_op_email;
+                                    display_prim_num = new_op_num
+                                    display_prim_name = new_op_name;
+    
+                                    prim_index++;
                                 } else {
                                     prim_input_field += '<option new_id="' + new_op_id + '" name="' + new_op_name + '" old_id="' + prim_id + '" email="' + new_op_email + '" phone="' + new_op_num + '">' + new_op_name + '</option>';
                                 }
-                                
             
                                 prim_index++;
                                 return true;
@@ -459,17 +471,38 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                             /**
                              *  Secondary Op:
                              */
+                            var secondary_json = '<p class="sec_json" id="sec_json" changed="false">';
+                            if (!isNullorEmpty(row_list.getValue({ name: 'custrecord_sendleplus_sec_json' }))){
+                                var sec_json = JSON.parse(row_list.getValue({ name: 'custrecord_sendleplus_sec_json' }));
+                            } else {
+                                var sec_json = row_list.getValue({ name: 'custrecord_sendleplus_sec_json' });
+                            }
+                            console.log(sec_json);
+                            if (!isNullorEmpty(sec_json)) {
+                                var sec_obj = sec_json; //sec_json //JSON.parse(sec_json); 
+                                var sec_obj_val = JSON.stringify(sec_json);
+                                secondary_json += sec_obj_val;
+                            }
+                            secondary_json += '</p>';
+
                             var secondary_input_field = '<select id="secondary_operator" class="ui fluid search dropdown secondary_operator" json="" multiple="">'
-            
                             operatorSet.forEach(function (secOperatorRes) {
                                 var sec_op_id = secOperatorRes.values.internalid[0].value;
                                 var sec_op_email = secOperatorRes.values.custrecord_operator_email;
                                 var sec_op_name = secOperatorRes.values.name;
                                 var sec_op_num = secOperatorRes.values.custrecord_operator_phone;
                                 var sec_op_zee = secOperatorRes.values.custrecord_operator_franchisee[0].text;
-            
-                                secondary_input_field += '<option sec_id="' + sec_op_id + '" name="' + sec_op_name + '" email="' + sec_op_email + '" phone="' + sec_op_num + '" zee="' + sec_op_zee + '">' + sec_op_name + ' (' + sec_op_zee + ')</option>';
-            
+    
+                                var sec_obj_res = '';
+                                if (!isNullorEmpty(sec_obj)) {
+                                    var sec_obj_res = sec_obj.filter(function (el) { return el.id == sec_op_id });
+                                }
+    
+                                if (!isNullorEmpty(sec_obj_res)) {
+                                    secondary_input_field += '<option sec_id="' + sec_op_id + '" name="' + sec_op_name + '" email="' + sec_op_email + '" phone="' + sec_op_num + '" zee="' + sec_op_zee + '" selected>' + sec_op_name + ' (' + sec_op_zee + ')</option>';
+                                } else {
+                                    secondary_input_field += '<option sec_id="' + sec_op_id + '" name="' + sec_op_name + '" email="' + sec_op_email + '" phone="' + sec_op_num + '" zee="' + sec_op_zee + '">' + sec_op_name + ' (' + sec_op_zee + ')</option>';
+                                }
                                 return true;
                             });
                             secondary_input_field += '</select>';
@@ -488,7 +521,7 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                                 display_prim_email, //9 
                                 display_prim_num, //10 
                                 secondary_input_field, //11 
-                                '<p class="sec_json" id="sec_json" changed="false"></p>', //12 //secondary_json 
+                                secondary_json, //'<p class="sec_json" id="sec_json" changed="false"></p>' //12 // 
                                 'True' //13
                             ]);
                             
@@ -911,10 +944,8 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                             } else {
                                 suburbList.push(suburb);
                                 suburbListState.push(zee_state); // Default State to Being Same as Zee State.
-                                
                             }
-                        });
-                        
+                        }); 
                     }
                 } else {
                     console.log('MailPlus: Through JSON')
@@ -956,6 +987,14 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                             }
                         });
                     } 
+                    JSON_suburb.forEach(function(suburb_express){
+                        if (suburb_express.suburbs.includes(' (')) {
+                            var suburb_name = (suburb_express.suburbs.split(' (')[0]).toUpperCase(); // If String Contains State, Add State into new Array.
+                        } else {
+                            var suburb_name = (suburb_express.suburbs).toUpperCase();
+                        }
+                        suburb_express.suburbs = suburb_name;
+                    });
                 } else {
                     console.log('Sendle Express: Through JSON')
                     JSON_suburb.forEach(function(suburb){
@@ -1072,9 +1111,7 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                             } else {
                                 var prim_id = ''; //   - POPULATE THIS!!!!
                             }
-                        }   
-                        
-                        var old_prim_id = prim_id;
+                        }
                         
                         if (!isNullorEmpty(prim_id)) { //|| prim_id == 0  - POPULATE THIS!!!!
                             prim_index = 1;
@@ -1234,33 +1271,33 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                 console.log('Suburb List Length: ' + suburbList.length);
                 if (suburbList.length > 0 && matchingSetLength > 0) {
                     dataMatchSet[0].forEach(function (row_list) {
-                        // dataMatchingSetSearch.run().getRange({ start: 0, end: 999 }).forEach(function (row_list) {
+                        console.log('Index: ' + index);
                         // var opJSON = JSON.parse(JSON_suburb);
-                        var opSet = JSON_suburb.filter(function (el){ if (el.suburbs.includes(sub_name)) {return el }})
-                        console.log('Prim Index: ' + index);
                         var sub_name = row_list.getValue({ name: 'custrecord_sendleplus_sub_name' });
-
+                        console.log(sub_name);
+                        console.log(JSON_suburb)
+                        var opSet = JSON_suburb.filter(function (el){ if (el.suburbs == sub_name) {return el }});
+                        console.log(opSet)
                         // if (suburbList.indexOf(lowerCaseAllWordsExceptFirstLetters(sub_name.split(' (')[0])) != -1) { // If Suburb is in Suburb List /
-                        var externalid = row_list.getValue({ name: 'externalid' }); // Toll - mappiung id
                         var internalid = row_list.getValue({ name: 'internalid' }) // Netsuite ID for Record
+                        var externalid = row_list.getValue({ name: 'externalid' }); // Toll - mappiung id
                         var sub_code = row_list.getValue({ name: 'custrecord_sendleplus_sub_code' });
                         sub_code = '<p class="internal_id" id="' + internalid + '">' + row_list.getValue({ name: 'custrecord_sendleplus_sub_code' }); + "</p>";
                         var post_code = row_list.getValue({ name: 'custrecord_sendleplus_postcode' });
 
                         var state = row_list.getValue({ name: 'custrecord_sendleplus_state' });
 
-                        var prim_name = row_list.getValue({ name: 'custrecord_sendleplus_prim_name' });
-                        // var prim_id = row_list.getValue({ name: 'custrecord_sendleplus_prim_id' });
                         if (!isNullorEmpty(opSet)){
                             if (!isNullorEmpty(opSet[0].primary_op)){
                                 var prim_id = opSet[0].primary_op; //   - POPULATE THIS!!!!
                             } else {
-                                var prim_id = ''; //   - POPULATE THIS!!!!
+                                // var prim_id = ''; //   - POPULATE THIS!!!!
+                                var prim_id = row_list.getValue({ name: 'custrecord_sendleplus_prim_id' });
                             }
                         }
-                        // console.log('Prim Id: ' + prim_id)
-                        var old_prim_id = prim_id;
+                        console.log('Prim Id: ' + prim_id);
 
+                        var prim_name = row_list.getValue({ name: 'custrecord_sendleplus_prim_name' });
                         var prim_email = row_list.getValue({ name: 'custrecord_sendleplus_prim_email' });
                         var prim_num = row_list.getValue({ name: 'custrecord_sendleplus_prim_phone_num' });
                         var prim_input_field = '<select id="primary_filter" class="form-control primary_operator ui search dropdown">'; //select2 //selectpicker
@@ -1329,15 +1366,20 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                         /**
                          *  Secondary Op:
                          */
-                        // var sec_json = row_list.getValue({ name: 'custrecord_sendleplus_sec_json' })
                         if (!isNullorEmpty(opSet)){
                             if (!isNullorEmpty(opSet[0].secondary_op)){
                                 console.log(opSet[0].secondary_op);
                                 var sec_json = opSet[0].secondary_op; // row_list.getValue({ name: 'custrecord_sendleplus_sec_json' })  - POPULATE THIS!!!!
                             } else {
-                                var sec_json = ''; //   - POPULATE THIS!!!!
+                                // var sec_json = ''; //   - POPULATE THIS!!!!
+                                if (!isNullorEmpty(row_list.getValue({ name: 'custrecord_sendleplus_sec_json' }))){
+                                    var sec_json = JSON.parse(row_list.getValue({ name: 'custrecord_sendleplus_sec_json' }));
+                                } else {
+                                    var sec_json = row_list.getValue({ name: 'custrecord_sendleplus_sec_json' });
+                                }
                             }
                         }
+                        console.log(sec_json)
                         if (!isNullorEmpty(sec_json)) {
                             var sec_obj = sec_json; //sec_json //JSON.parse(sec_json); 
                             var sec_obj_val = JSON.stringify(sec_json);
