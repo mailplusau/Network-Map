@@ -760,13 +760,6 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
             window.location.href = upload_url;
         });
 
-        // if (zee_id != 0) {
-        //     $(document).ready(function () {
-        //         var column = dataTable.column([19]);
-        //         column.visible(false);
-        //     });
-        // }
-
         /**
          *  Click for Instructions Section Collapse
          */
