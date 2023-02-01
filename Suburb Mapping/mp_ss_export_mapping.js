@@ -161,9 +161,28 @@ function(ui, email, runtime, search, record, http, log, redirect, task, format, 
                          */
                         if (!isNullorEmpty(opSet[0])){
                             if (!isNullorEmpty(opSet[0].primary_op)){
-                                var prim_id = opSet[0].primary_op; //   - POPULATE THIS!!!!
-                                var prim_obj = primOperatorSet.filter(function (el) { return el.id == prim_id });
-                                var prim_name = prim_obj[0].values.name;
+                                var prim_id = opSet[0].primary_op; //   - POPULATE THIS!!!
+                                if (typeof prim_id == 'object'){
+                                    log.debug({
+                                        title: 'Primary ID | OBJECT | ' + prim_id,
+                                        details: prim_id.length
+                                    })
+                                    var prim_obj = primOperatorSet.filter(function(el) { if (prim_id.indexOf(el.id) != -1) { return el } });
+                                    prim_obj.forEach(function(prim, index){
+                                        log.debug({
+                                            title: 'index',
+                                            details: prim_name
+                                        })
+                                        if (index > 0){
+                                            prim_name += ('| ' + prim.values.name);
+                                        } else {
+                                            prim_name = prim.values.name;
+                                        }
+                                    });
+                                } else {
+                                    var prim_obj = primOperatorSet.filter(function (el) { return el.id == prim_id });
+                                    var prim_name = prim_obj[0].values.name;
+                                }
                             }
                             if (!isNullorEmpty(opSet[0].zee_name)){
                                 var zee_name = opSet[0].zee_name;
@@ -258,15 +277,39 @@ function(ui, email, runtime, search, record, http, log, redirect, task, format, 
                         if (!isNullorEmpty(opSet[0])){
                             if (!isNullorEmpty(opSet[0].primary_op)){
                                 var prim_id = opSet[0].primary_op; //   - POPULATE THIS!!!!
-                                var prim_obj = primOperatorSet.filter(function (el) { return el.id == prim_id });
-                                var prim_name = prim_obj[0].values.name;
-                                var prim_email = prim_obj[0].values.email;
-                                var prim_num = prim_obj[0].values.name;
+                                // var prim_obj = primOperatorSet.filter(function (el) { return el.id == prim_id });
+                                // var prim_name = prim_obj[0].values.name;
+                                // var prim_email = prim_obj[0].values.email;
+                                // var prim_num = prim_obj[0].values.name;
+                                if (typeof prim_id == 'object'){
+                                    log.debug({
+                                        title: 'Primary ID | OBJECT | ' + prim_id,
+                                        details: prim_id.length
+                                    })
+                                    var prim_obj = primOperatorSet.filter(function(el) { if (prim_id.indexOf(el.id) != -1) { return el } });
+                                    prim_obj.forEach(function(prim, index){
+                                        log.debug({
+                                            title: 'index',
+                                            details: prim_name
+                                        })
+                                        if (index > 0){
+                                            prim_name += ('| ' + prim.values.name);
+                                            prim_email += ('| ' + prim.values.email);
+                                        } else {
+                                            prim_name = prim.values.name;
+                                            prim_email = prim.values.email;
+                                        }
+                                    });
+                                } else {
+                                    var prim_obj = primOperatorSet.filter(function (el) { return el.id == prim_id });
+                                    var prim_name = prim_obj[0].values.name;
+                                    var prim_email = prim_obj[0].values.email;
+                                }
                             } else {
                                 var prim_id = '';
                                 var prim_name = '';
                                 var prim_email = '';
-                                var prim_num = '';
+                                // var prim_num = '';
                             }
                             if (!isNullorEmpty(opSet[0].zee_name)){
                                 var zee_name = opSet[0].zee_name;

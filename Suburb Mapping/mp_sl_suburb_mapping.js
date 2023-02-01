@@ -325,11 +325,11 @@ function (ui, email, runtime, search, record, http, log, redirect, task, format)
         inlineQty += '<select id="zee_filter_dropdown" class="form-control" required>';
         inlineQty += '<option></option>';
         var zeesSearch = search.load({ type: 'partner', id: 'customsearch_smc_franchisee' });
-        // zeesSearch.filters.push(search.createFilter({
-        //     name: 'entityid',
-        //     operator: search.Operator.DOESNOTSTARTWITH,
-        //     values: 'Test'
-        // }))
+        zeesSearch.filters.push(search.createFilter({
+            name: 'entityid',
+            operator: search.Operator.DOESNOTSTARTWITH,
+            values: 'Test'
+        }))
         var zeesSearchResults = zeesSearch.run();
         log.audit({
             title: 'Suburb Mapping - JSON Stringify - zeesSearchResults',

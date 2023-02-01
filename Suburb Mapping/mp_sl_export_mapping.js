@@ -348,16 +348,16 @@ function(ui, email, runtime, search, record, http, log, redirect, task, format) 
         inlineQty += '<select id="zee_filter_dropdown" class="zee_dropdown ui fluid search dropdown" multiple="">';
         // inlineQty += '<option></option>';
         var zeesSearch = search.load({ type: 'partner', id: 'customsearch_smc_franchisee' });
-        // zeesSearch.filters.push(search.createFilter({
-        //     name: 'entityid',
-        //     operator: search.Operator.DOESNOTSTARTWITH,
-        //     values: 'Test'
-        // }))
+        zeesSearch.filters.push(search.createFilter({
+            name: 'entityid',
+            operator: search.Operator.DOESNOTSTARTWITH,
+            values: 'Test'
+        }))
         var zeesSearchResults = zeesSearch.run();
-        log.audit({
-            title: 'Export Mapping - JSON Stringify - zeesSearchResults',
-            details: JSON.stringify(zeesSearchResults)
-        })
+        // log.audit({
+        //     title: 'Export Mapping - JSON Stringify - zeesSearchResults',
+        //     details: JSON.stringify(zeesSearchResults)
+        // })
         zeesSearchResults.each(function (zeesSearchResult) {
             var zee_id = zeesSearchResult.getValue({ name: 'internalid', summmary: search.Summary.GROUP });
             var zee_name = zeesSearchResult.getValue({ name: 'companyname', summmary: search.Summary.GROUP });
@@ -393,9 +393,6 @@ function(ui, email, runtime, search, record, http, log, redirect, task, format) 
         inlineQty += '<span style="background-color: #379E8F; color: white;" class="input-group-addon" id="selector_text">Selector Type</span>';
         inlineQty += '<select id="selector" class="form-control">';
         inlineQty += '<option value="">- Undefined -</option>';
-        // inlineQty += '<option value="mp_standard">MP Standard</option>';
-        // inlineQty += '<option value="mp_express">MP Express</option>';
-        // inlineQty += '<option value="s_au_express">Sendle AU Express</option>';
         var selector_type = [
             { name: "MP Standard", id: "mp_standard" },
             { name: "MP Express", id: "mp_express" },

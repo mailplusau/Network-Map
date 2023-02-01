@@ -853,7 +853,7 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                 values: zee_id
             }));
             var primOperatorResult = primOperatorSearch.run().getRange({ start: 0, end: 400 });
-            console.log('Prim Operator Set: ' + JSON.stringify(primOperatorResult));
+            // console.log('Prim Operator Set: ' + JSON.stringify(primOperatorResult));
             primOperatorSet = JSON.parse(JSON.stringify(primOperatorResult));
             // Add All Operators to the Set
             var prim_id_all = primOperatorSet.map(function(el){ return el.values.internalid[0].value });
@@ -873,7 +873,7 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                     custrecord_operator_name: prim_name_all,
                 }
             }
-            primOperatorSet.unshift(all_operator_obj);
+            primOperatorSet.push(all_operator_obj); //unshift
         }
 
         // TEST - VIC
@@ -982,9 +982,10 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                 }  
             }
         }
-        console.log(suburbList);
-        console.log(suburbListState);
-        console.log(suburbListPostCode);
+        console.log(JSON_suburb);
+        // console.log(suburbList);
+        // console.log(suburbListState);
+        // console.log(suburbListPostCode);
 
         // @ FORMAT OF IF ELSE CONDITIONS @
         // if (selector == 'mp_standard') { // Not MP Express or Sendle Express - Use Sendle Depot One.
@@ -1029,7 +1030,7 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                 }
                 dataMatchingSetSearch.filterExpression = matchingFilterExpression;
 
-                console.log('Filter Expression - ' + selector + ' : G ' + JSON.stringify(matchingFilterExpression));
+                // console.log('Filter Expression - ' + selector + ' : G ' + JSON.stringify(matchingFilterExpression));
 
                 var matchingSetLength = parseInt(dataMatchingSetSearch.runPaged().count);
 
@@ -1085,6 +1086,7 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                                 var prim_id = ''; //   - POPULATE THIS!!!!
                             }
                         }
+                        console.log(prim_id);
                         
                         if (!isNullorEmpty(prim_id)) { //|| prim_id == 0  - POPULATE THIS!!!!
                             prim_index = 1;
@@ -1110,8 +1112,7 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                                 prim_email = new_op_email;
                                 prim_num = new_op_num
                                 prim_name = new_op_name;
-                            } else if (JSON.stringify(prim_id) == JSON.stringify(new_op_id)) {
-                                console.log("All Operators?")
+                            } else if (arraysEqual(prim_id, new_op_id) && new_op_id.length > 1) {
                                 prim_input_field += '<option new_id="' + new_op_id + '" name="' + new_op_name + '" old_id="' + prim_id + '" email="' + new_op_email + '" phone="' + new_op_num + '" selected>' + new_op_name + '</option>';
 
                                 display_prim_id = new_op_id;
@@ -1120,7 +1121,7 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                                 display_prim_name = new_op_name;
 
                                 prim_index++;
-                            } else if (prim_id == new_op_id) {
+                            } else if (prim_id == new_op_id && new_op_id.length != 1) {
                                 prim_input_field += '<option new_id="' + new_op_id + '" name="' + new_op_name + '" old_id="' + prim_id + '" email="' + new_op_email + '" phone="' + new_op_num + '" selected>' + new_op_name + '</option>';
 
                                 display_prim_id = new_op_id;
@@ -1209,7 +1210,7 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
             } else { // MP Express and Sendle AU Express
                 /** 
                  * Primary Datatable: MP Express & AU Express
-             */
+                */
                 var dataMatchingSetSearch = search.load({ type: 'customrecord_sendleplus_mapping_list', id: 'customsearch_sendleplus_mapping_search' }); // Toll Suburbs List
 
                 var matchingFilterExpression = [];
@@ -1239,7 +1240,7 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
 
                 dataMatchingSetSearch.filterExpression = matchingFilterExpression;
 
-                console.log('Filter Expression - ' + selector + ' : G ' + JSON.stringify(matchingFilterExpression));
+                // console.log('Filter Expression - ' + selector + ' : G ' + JSON.stringify(matchingFilterExpression));
 
                 var matchingSetLength = parseInt(dataMatchingSetSearch.runPaged().count);
 
@@ -1255,7 +1256,7 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                         console.log('Index: ' + index);
                         // var opJSON = JSON.parse(JSON_suburb);
                         var sub_name = row_list.getValue({ name: 'custrecord_sendleplus_sub_name' });
-                        var opSet = JSON_suburb.filter(function (el){ if (el.suburbs == sub_name) {return el }}); // Filter for Suburbs Containing the Name from Suburb List
+                        var opSet = JSON_suburb.filter(function (el){ if ((el.suburbs).toUpperCase() == sub_name) {return el }}); // Filter for Suburbs Containing the Name from Suburb List
                         var internalid = row_list.getValue({ name: 'internalid' }) // Netsuite ID for Record
                         var externalid = row_list.getValue({ name: 'externalid' }); // Toll - mappiung id
                         var sub_code = row_list.getValue({ name: 'custrecord_sendleplus_sub_code' });
@@ -1264,11 +1265,15 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
 
                         var state = row_list.getValue({ name: 'custrecord_sendleplus_state' });
 
+                        console.log(sub_name);
+                        console.log(opSet);
                         if (!isNullorEmpty(opSet)){
                             if (!isNullorEmpty(opSet[0].primary_op)){
                                 var prim_id = opSet[0].primary_op; //   - POPULATE THIS!!!!
+                                console.log('Primary Op ID In List: ' + prim_id);
                             } else {
                                 var prim_id = row_list.getValue({ name: 'custrecord_sendleplus_prim_id' });
+                                console.log('Primary Op ID FROM SERACH: ' + prim_id);
                             }
                         }
 
@@ -1316,7 +1321,7 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                                 prim_email = new_op_email;
                                 prim_num = new_op_num
                                 prim_name = new_op_name;
-                            } else if (JSON.stringify(prim_id) == JSON.stringify(new_op_id)) {
+                            } else if (arraysEqual(prim_id, new_op_id) && new_op_id.length > 1) {
                                 console.log("All Operators?")
                                 prim_input_field += '<option new_id="' + new_op_id + '" name="' + new_op_name + '" old_id="' + prim_id + '" email="' + new_op_email + '" phone="' + new_op_num + '" selected>' + new_op_name + '</option>';
 
@@ -1326,8 +1331,9 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
                                 display_prim_name = new_op_name;
 
                                 prim_index++;
-                            } else if (prim_id == new_op_id) {
+                            } else if (prim_id == new_op_id && new_op_id.length != 1) {
                                 prim_input_field += '<option new_id="' + new_op_id + '" name="' + new_op_name + '" old_id="' + prim_id + '" email="' + new_op_email + '" phone="' + new_op_num + '" selected>' + new_op_name + '</option>';
+                                console.log("Normal Operators?")
 
                                 display_prim_id = new_op_id;
                                 display_prim_email = new_op_email;
@@ -1557,6 +1563,22 @@ function (error, runtime, search, url, record, format, email, currentRecord) {
         // save(context);
         return true;
     }
+
+    function arraysEqual(a, b) {
+        if (a === b) return true;
+        if (a == null || b == null) return false;
+        if (a.length !== b.length) return false;
+      
+        // If you don't care about the order of the elements inside
+        // the array, you should sort both arrays here.
+        // Please note that calling sort on an array will modify that array.
+        // you might want to clone your array first.
+      
+        for (var i = 0; i < a.length; ++i) {
+          if (a[i] !== b[i]) return false;
+        }
+        return true;
+      }
 
     function lowerCaseAllWordsExceptFirstLetters(string) {
         return string.replace(/\S*/g, function (word) {
